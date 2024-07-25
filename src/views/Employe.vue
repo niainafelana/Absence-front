@@ -167,8 +167,13 @@ onMounted(() => {
 <template>
 
     <body>
-        <div class="container-xl">
+        <div class="d-flex">
+        <!-- Navbar importé dans le template global -->
+        <Navbar class="navbar" />
+
+        <div class="container-lg">
             <div class="table-responsive">
+                
                 <div class="table-wrapper">
                     <div class="table-title">
                         <div class="row">
@@ -367,6 +372,7 @@ onMounted(() => {
                 </div>
             </div>
         </div>
+        </div>
     </body>
 </template>
 
@@ -375,25 +381,46 @@ onMounted(() => {
 
 body {
     color: #566787;
-    background: #f5f5f5;
-    font-family: "Varela Round", sans-serif;
+background-color: $accent;    font-family: "Varela Round", sans-serif;
     font-size: 15px;
 }
 
-.table-responsive {
-    position: fixed;
-    margin-left: 7%;
-    margin-top: 2.4%;
-    justify-content: center;
+.d-flex {
+  display: flex;
 }
 
-.table-wrapper {
-    background-color: $text;
-    padding: 20px 25px;
-    border-radius: 3px;
-    min-width: 1000px;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+.navbar {
+  height: 100vh; 
+  position: fixed; 
+  left: 0;
 }
+
+.container-lg {
+  margin-left: 16%; /* Pour faire de la place à la navbar */
+  width: 150%;
+  padding: 8px; /* Pour ajouter un peu de marge autour du contenu */
+}
+
+.table-responsive {
+    overflow-x: hidden; /* Désactive le défilement horizontal */
+    width: 100%; /* Assure que le conteneur du tableau utilise toute la largeur disponible */
+    margin: 0 auto; /* Centre le tableau horizontalement si nécessaire */
+    padding: 0; 
+}
+
+/* Assurer que le tableau occupe toute la largeur disponible */
+.table-wrapper {
+  width: 100%;
+  margin: 0;
+    padding: 0;
+    background-color: $text;
+  
+  border-radius: 3px;
+  overflow-x: hidden; 
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+
+}
+
 
 .table-title {
     padding-bottom: 15px;
@@ -436,14 +463,6 @@ body {
     float: left;
     margin-top: 2px;
 }
-
-table.table tr th,
-table.table tr td {
-    border-color: #e9e9e9;
-    padding: 12px 15px;
-    vertical-align: middle;
-}
-
 table.table tr th:first-child {
     width: 150px;
 }
@@ -465,7 +484,7 @@ table.table td:last-child i {
 }
 
 .table-scroll-container {
-    height: 70vh;
+    height: 88vh;
     overflow: auto;
 }
 
@@ -478,4 +497,7 @@ table.table td:last-child i {
     margin-left: 2%;
     color: $primary;
 }
+
+
 </style>
+
