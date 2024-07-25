@@ -396,19 +396,19 @@ background-color: $accent;    font-family: "Varela Round", sans-serif;
 }
 
 .container-lg {
-  margin-left: 16%; /* Pour faire de la place à la navbar */
+  margin-left: 16%; 
   width: 150%;
-  padding: 8px; /* Pour ajouter un peu de marge autour du contenu */
+  padding: 8px; 
 }
 
 .table-responsive {
-    overflow-x: hidden; /* Désactive le défilement horizontal */
-    width: 100%; /* Assure que le conteneur du tableau utilise toute la largeur disponible */
-    margin: 0 auto; /* Centre le tableau horizontalement si nécessaire */
+    overflow-x: hidden;
+    width: 100%; 
+    margin: 0 auto;
     padding: 0; 
 }
 
-/* Assurer que le tableau occupe toute la largeur disponible */
+
 .table-wrapper {
   width: 100%;
   margin: 0;
