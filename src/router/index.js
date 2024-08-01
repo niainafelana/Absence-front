@@ -1,16 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue';
 import Navbar from '../components/Navbar.vue'
 import Employe from '@/views/Employe.vue';
+import Exemple from '@/components/Exemple.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: Home
-    },
     {
       path: '/navbar',
       name: 'navbar',
@@ -20,6 +15,11 @@ const router = createRouter({
       path: '/employe',
       name: 'employe',
       component: Employe
+    },
+    {
+      path: '/exemple',
+      name: 'exemple',
+      component: Exemple
     }
     
    /* {

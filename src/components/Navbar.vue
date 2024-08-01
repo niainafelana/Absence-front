@@ -37,7 +37,7 @@ import { RouterLink } from 'vue-router';
             <div class="dropdown pb-4">
               <a href="#" class="d-flex align-items-center text-white text-decoration-none"
                 id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                <img src="https://github.com/mdo.png" alt="hugenerd" width="30" height="30" class="rounded-circle">
+                <i class="fs-4 bi-house"></i> 
                 <span class="d-none d-sm-inline mx-1">loser</span>
               </a>
             </div>
@@ -50,7 +50,7 @@ import { RouterLink } from 'vue-router';
   </body>
   
 </template>
-<style lang="scss">
+<style lang="scss" scoped>
 @import "../assets/style/globaly.scss";
 .body{
   background-color: $secondary;
@@ -58,6 +58,7 @@ import { RouterLink } from 'vue-router';
 }
 
 a{
+  background-color: $secondary;
   margin-bottom: 12%;
 }
 .nav-link {
