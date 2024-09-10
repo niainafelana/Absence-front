@@ -53,12 +53,12 @@ import { RouterLink } from 'vue-router';
 <style lang="scss" scoped>
 @import "../assets/style/globaly.scss";
 .body{
-  background-color: $secondary;
+  background-color: $accent;
   position: fixed;
 }
 
 a{
-  background-color: $secondary;
+  background-color: $accent;
   margin-bottom: 12%;
 }
 .nav-link {
@@ -68,10 +68,12 @@ a{
 li i {
   color: $primary;
   font-weight: bold;
+  font-size: 10pxB;
 }
 span {
   color: $primary;
   font-weight: bold;
   display: flex;
+  font-size: 12px;
 }
 </style>

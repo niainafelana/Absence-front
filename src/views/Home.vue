@@ -1,88 +1,196 @@
+<script setup>
+import { ref } from 'vue';
+
+const currentDate = ref(new Date().toISOString().split('T')[0]);
+const currentTime = ref(new Date().toLocaleTimeString());
+
+
+</script>
 <template>
-  <div class="d-flex">
-    <Navbar />
-    <div class="container-fluid p-20">
-      <div class="row">
-        <div class="col-md-4 offset-md-1"> 
-          <div class="balance-card mb-4 p-10 text-white d-flex flex-column justify-content-between">
-            <div>
-              <p>Vous disposez de</p>
-              <h1>8,01€</h1>
-              <p>sur votre compte prépayé</p>
-            </div>
-            <div class="piggy-icon">
-              <img src="../assets/sary/money-box_9256130.png" alt="Piggy Bank" class="img-fluid">
-            </div>
-          </div>
-          <div class="history-card mb-4 p-4 text-white">
-            <h2>HISTORIQUE</h2>
-            <div class="history-item d-flex justify-content-between">
-              <span>17/02/2021</span>
-              <span>Commande</span>
-              <span class="text-danger">-11,99€</span>
-            </div>
-            <div class="history-item d-flex justify-content-between">
-              <span>28/11/2018</span>
-              <span>Crédit</span>
-              <span class="text-danger">-20,00€</span>
-            </div>
-            <p class="mt-3">OPÉRATIONS PRÉCÉDENTES</p>
-          </div>
+  <body>
+    <div class="header">
+        <div class="date">
+          <p>{{ currentDate }}</p>
         </div>
-        <div class="col-md-4">
-          <div class="">
-            <img src="../assets/sary/filles-travaillant-dans-espace-bureau-ouvert-illustration-vectorielle_116137-2124.jpg" alt="">
-          </div>
-        </div>
-      </div>
+        <div class="time">
+            <div id="head"></div>
+            <p>{{ currentTime }}</p>        </div>
     </div>
-  </div>
+    <br>
+    <div class="content">
+        <div class="image">
+            <img src="../assets/sary/login.avif" alt="">
+        </div>
+        <div class="container">
+            <div class="form_container">
+                <h1> MIEZAKABSENCE</h1>
+                <form id="loginForm">
+                    <div class="username">
+                        <label for="username">Administrateur</label>
+                        <br>
+                        <input type="text" placeholder="user" id="username" name="username">
+                    </div>
+                    <br>
+                    <div class="password">
+                        <label for="password">Mot de passe</label>
+                        <br>
+                        <div class="mdp-input">
+                            <input type="password" id="password" name="password">
+                            <i class="fas fa-eye toggle-password"></i>
+                        </div>
+                        <br>
+                    </div>
+                    <br>
+                    <div class="button">
+                        <button type="submit"> Entrer  </button>
+                        <button id="btnNew"> Nouveau </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
 </template>
 
-<script setup>
-import Navbar from "@/components/Navbar.vue";
-</script>
-
-<style scoped>
-.d-flex {
-  display: flex;
+<style lang="scss" scoped>
+@import "../assets/style/globaly.scss";
+body{
+    color: $primary;
+    font-size: 16px;
+    margin-top: 0px;
+    overflow: hidden;
+    height: 100vh;
 }
 
-.container-fluid {
-  margin-left: 10rem; 
+h1 {
+    color: $primary;
+    font-size: 25px;
 }
 
-.balance-card, .history-card {
-  background-color: #ff6600;
-  color: white;
-  border-radius: 8px;
-  position: relative;
+input{
+    width: 200px;
+    height: 30px;
+    margin: 7.5px;
+    border-radius: 10px;
+    border: 1px solid $secondary;
+    padding: 2px;
 }
 
-.piggy-icon {
-  position: absolute;
-  bottom: 10px;
-  right: 13px;
+button{
+    width: 100px;
+    height: 35px;
+    border: none;
+    background-color: $accent;
+    color: $primary;
+    border-radius: 15px;
+    align-self:center;
+    letter-spacing: 2px;
+    cursor: pointer;
 }
 
-.history-item {
-  display: flex;
-  justify-content: space-between;
+/*Emplacement de la date et heure*/
+.header{
+    letter-spacing: 2px;
+    font-size: 14px;
+    color: $primary;
+    font-weight: bolder;
+    text-align: center;
+    margin-top: 10px;
+    line-height: 50px;
 }
 
-.actions-card {
-  border-radius: 8px;
+/* Emplacement d'un mini-calenrier */
+.date{
+    float: left;
+    background-color: $accent;
+    font-weight: bold;
+    width: 115px;
+    height: 50px;
+    border: 2px solid $accent;
+    margin-left: 5px;
+    position: relative;
 }
 
-.actions-card h2 {
-  font-size: 1.2rem;
+/* Emplacement de la montre virtuelle */
+.time{
+    float: right;
+    display: block;
+    background-color: $accent;
+    /*margin-right: 5px;*/
+    width: 60px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid $accent;
+    position: relative;
+    text-align: center;
+    margin-right: 5px;
 }
 
-.actions-card p {
-  font-size: 0.9rem;
+/* Permet de mettre en place la page entière*/
+.content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 80vh;
+    position: inherit;
+    margin-bottom: 5px;
 }
 
-.btn-outline-dark {
-  width: 100%;
+/* Manipulation de l'emplacement du formulaire */
+.container{
+    display: block;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
 }
+
+.form_container h1{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 50px;
+    margin-top: 5px;
+}
+
+.form_container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: $text;
+    max-width: 400px;
+    max-height: 60vh;
+    font-size: 14px;
+    margin-left: -50px;
+}
+
+.image{
+    width: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 150px;
+}
+
+.image img{
+    width: 600px;
+}
+
+#loginForm{
+    text-align: center;
+}
+
+.button {
+    margin: 7.5px;
+}
+
+/* Icone de démasquage de mot de passe */
+.mdp-input i {
+    position: absolute;
+    margin-left: -35px;
+    cursor: pointer;
+    line-height: 50px;
+}
+
 </style>

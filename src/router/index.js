@@ -2,6 +2,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Employe from '@/views/Employe.vue';
 import Exemple from '@/components/Exemple.vue';
+import Home from '@/views/Home.vue';
+import Utilisateur from '@/components/Utilisateur.vue';
+import Demande from '@/views/Demande.vue';
+import Demandee from '@/views/Demandee.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,8 +24,27 @@ const router = createRouter({
       path: '/exemple',
       name: 'exemple',
       component: Exemple
+    },
+    {
+      path:'/',
+      name:'home',
+      component:Home
+    },
+    {
+      path:'/utilisateur',
+      name:'utilisteur',
+      component:Utilisateur
+    },
+    {
+      path:'/demande',
+      name:'demande',
+      component:Demande
     }
-    
+    ,{
+      path:'/fangatahana',
+      name: 'fangatahana',
+      component: Demandee
+    }
    /* {
       path: '/about',
       name: 'about',
