@@ -100,4 +100,37 @@
     </div>
   </div>
 </template>
+<script setup>
+const submitForm = async () => {
+    try {
+        const response = await axios.put('http://localhost:3000/demandes/ajout', formData.value);
+        
+        Swal.fire({
+            icon: "success",
+            title: "Succès",
+            text: response.data.message || "Votre demande a été traitée avec succès.",
+            confirmButtonColor: "#3085d6"
+        });
+    } catch (error) {
+    // Vérifier la structure de l'erreur
+    if (error.response && error.response.data && error.response.data.error) {
+      const errorMessage = error.response.data.error.message;
+
+      // Afficher l'erreur spécifique avec SweetAlert
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: errorMessage
+      });
+    } else {
+      // Afficher une erreur générique si aucune information spécifique n'est fournie
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: 'Une erreur est survenue. Veuillez réessayer plus tard.'
+      });
+    }
+  }
+}
+</script>
 

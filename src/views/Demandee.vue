@@ -1,7 +1,7 @@
 <script setup>
 import Navbar from "@/components/Navbar.vue";
 import Utilisateur from "@/components/Utilisateur.vue";
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed, reactive } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { format } from 'date-fns';
@@ -25,6 +25,14 @@ const formData = ref({
     motif: '',
 });
 
+const cancel = () => {
+    formData.value.id_employe = '';
+    formData.value.id_absence = '';
+    formData.value.datedeb = '';
+    formData.value.jours_absence = '';
+    formData.value.duredebut = '';
+    formData.value.motif = '';
+};
 const employes = ref([]);
 const absences = ref([]);
 const loading = ref(false);
@@ -50,75 +58,66 @@ onMounted(async () => {
     }
 });
 
+//affiche le nom complet de l'employé
+const displayedEmployeName = computed(() => {
+    const selectedEmploye = employes.value.find(employe => employe.id_employe === formData.value.id_employe);
+    return selectedEmploye ? `${selectedEmploye.nom_employe} ${selectedEmploye.pre_employe}` : '';
+});
 
-const changeinput = async () => {
-    const selectid = formData.value.id_absence;
-
-    if (!selectid || isNaN(selectid)) {
-        return;
+//maj id employe
+function handleEmployeInput(event) {
+    const value = event.target.value;
+    const selectedEmploye = employes.value.find(employe => `${employe.nom_employe} ${employe.pre_employe}` === value);
+    if (selectedEmploye) {
+        formData.value.id_employe = selectedEmploye.id_employe;
     }
+}
 
-    try {
-        const response = await axios.get(`http://localhost:3000/absences/recup/${selectid}`);
-        console.log('Données récupérées:', response.data);
 
-        // Vérifie si l'absence est de type spécial
-        isSpecialAbsence.value = response.data.type === 'special';
+const handleAbsenceChange = (e) => {
+  const id_absence = parseInt(e.target.value);
 
-        if (isSpecialAbsence.value) {
-            formData.value.motif = response.data.nom_absence; // Remplit le motif automatiquement
-            formData.value.jours_absence = ''; // Réinitialise les jours d'absence si spécial
-        } else {
-            formData.value.motif = ''; // Réinitialise le champ motif pour les absences non spéciales
-        }
-    } catch (err) {
-        console.error('Erreur lors de la récupération du type d\'absence:', err.response ? err.response.data : err.message);
-        Swal.fire({
-            icon: "error",
-            title: "Erreur",
-            text: "Erreur lors du traitement du type d\'absence",
-            confirmButtonColor: "#212E53",
-        });
+  const selectionner = absences.value.find(absence => absence.id_absence === id_absence);
+
+  if (selectionner) {
+    if (selectionner.pour == 0) {
+      formData.value.motif = selectionner.nom_absence;
+      formData.value.jours_absence = selectionner.duree;
+    } else {
+      formData.value.motif = '';
+      formData.value.jours_absence = 0;
+      console.warn("L'absence sélectionnée ne correspond pas à 'pour = 0'");
     }
+  } else {
+    console.error("Absence non trouvée");
+  }
 };
 
-const submitForm = async () => {
-    loading.value = true;
-    error.value = null;
-    successMessage.value = null;
 
+
+
+
+const submitForm = async () => {
     try {
         const response = await axios.put('http://localhost:3000/demandes/ajout', formData.value);
+        
         Swal.fire({
             icon: "success",
             title: "Succès",
-            text: response.data.message,
-            confirmButtonColor: "#212E53",
+            text: response.data.message || "Votre demande a été traitée avec succès.",
+            confirmButtonColor: "#3085d6"
         });
-        cancel();
-        await listeDemande();
-    } catch (err) {
-        console.error('Erreur complète:', err); // Affiche l'erreur complète pour le débogage
+    } catch (error) {
         Swal.fire({
             icon: "error",
             title: "Erreur",
-            text: err.response?.data?.error || 'Erreur lors de l\'envoi de la demande.',
-            confirmButtonColor: "#212E53",
+            text: error.response?.data?.error || "Une erreur est survenue.",
+            confirmButtonColor: "#d33"
         });
-    } finally {
-        loading.value = false;
     }
 };
 
 
-const cancel = () => {
-    formData.value.id_employe = '';
-    formData.value.id_absence = '';
-    formData.value.datedeb = '';
-    formData.value.jours_absence = '';
-    formData.value.duredebut = '';
-    formData.value.motif = '';
-};
 
 
 /*Affichage de la liste des demandes dans un tableau*/
@@ -414,7 +413,8 @@ function imprimerDemande(demande) {
 
                                 <tbody>
                                     <tr v-for="demandee in demandees" :key="demandee.id">
-                                        <td>{{ demandee.employe.nom_employe }}<br>{{ demandee.employe.pre_employe }}</td>
+                                        <td>{{ demandee.employe.nom_employe }}<br>{{ demandee.employe.pre_employe }}
+                                        </td>
                                         <td>E006</td>
                                         <td>{{ demandee.employe.motif_employe }}</td>
                                         <td>{{ demandee.jours_absence }}</td>
@@ -461,7 +461,8 @@ function imprimerDemande(demande) {
                                 <div class="flex flex-col sm:flex-row gap-4">
                                     <!-- Champ "NomEmploye" -->
                                     <div class="relative w-full">
-                                        <input type="text" id="id_employe" v-model="formData.id_employe"
+                                        <input type="text" id="id_employe" :value="displayedEmployeName"
+                                            @input="handleEmployeInput"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " list="employes" required />
                                         <label for="id_employe"
@@ -469,29 +470,28 @@ function imprimerDemande(demande) {
                                             Employé
                                         </label>
                                         <datalist id="employes">
-                                            <option v-for="employe in employes" :key="employe.nom_employe"
-                                                :value="employe.id_employe">
-                                                {{ employe.id_employe }} - {{ employe.nom_employe }} {{
-                                                    employe.pre_employe }}
+                                            <option v-for="employe in employes" :key="employe.id_employe"
+                                                :value="`${employe.nom_employe} ${employe.pre_employe}`">
+                                                {{ employe.nom_employe }} {{ employe.pre_employe }}
                                             </option>
                                         </datalist>
                                     </div>
 
                                     <div class="relative w-full">
-                                        <input type="text" id="id_absence" v-model="formData.id_absence"
-                                            @change="changeinput"
-                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                            placeholder=" " list="absences" required />
+                                        <select id="id_absence" v-model="formData.id_absence" @change="handleAbsenceChange"
+                                            class="block px-2.5 py-3 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                            required>
+                                            <option disabled value="">Sélectionnez un type d'absence</option>
+                                            <option v-for="absence in absences" :key="absence.id_absence"
+                                                :value="absence.id_absence">
+                                                {{ absence.nom_absence }}
+                                            </option>
+                                        </select>
                                         <label for="id_absence"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
                                             Type d'absence
                                         </label>
-                                        <datalist id="absences">
-                                            <option v-for="absence in absences" :key="absence.id_absence"
-                                                :value="absence.id_absence">
-                                                {{ absence.nom_absence }} ({{ absence.type }})
-                                            </option>
-                                        </datalist>
+
                                     </div>
 
 
@@ -511,7 +511,7 @@ function imprimerDemande(demande) {
                                         </label>
                                     </div>
 
-                                    <!-- Champ "Sexe" -->
+                                    <!-- Champ aprem ou matin -->
                                     <div class="col-span-2 sm:col-span-1 w-full">
                                         <select id="category" v-model="formData.duredebut"
                                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
@@ -523,17 +523,17 @@ function imprimerDemande(demande) {
 
                                 <br />
                                 <div class="flex gap-4">
-                                    <!-- Champ Plafonnement -->
-                                    <div class="relative flex-1" v-if="!isSpecialAbsence">
-                                        <input type="text" id="floating_outlined_plafonnement" v-model="formData.motif"
+                                    <!-- Champ motif -->
+                                    <div class="relative flex-1">
+                                        <input type="text" id="floating_outlined_motif" v-model="formData.motif"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
-                                        <label for="floating_outlined_plafonnement"
+                                        <label for="floating_outlined_motif"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">Motif</label>
                                     </div>
 
-                                    <!-- Champ Plafonnement Boolean -->
-                                    <div class="relative flex-1" v-if="!isSpecialAbsence">
+                                    <!-- Champ jour absence -->
+                                    <div class="relative flex-1">
                                         <input type="number" step="0.5" min="0" id="floating_outlined_joursabsence"
                                             v-model="formData.jours_absence"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
