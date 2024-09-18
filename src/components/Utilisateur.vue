@@ -23,10 +23,11 @@
   display: flex;
   justify-content: space-between; /* Assure que les sections gauche et droite sont bien placées */
   align-items: center; /* Aligne verticalement les éléments au centre */
-  padding: 15px 30px;
+  padding: 15px 40px;
   background-color:$text;
   border-bottom: 2px solid #ddd;
   width: 100%;
+  box-shadow: 10px 10px 5px #F0F0F0;
 }
 
 .left-section {
