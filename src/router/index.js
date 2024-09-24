@@ -6,6 +6,7 @@ import Home from '@/views/Home.vue';
 import Utilisateur from '@/components/Utilisateur.vue';
 import Demande from '@/views/Demande.vue';
 import Demandee from '@/views/Demandee.vue';
+import Dashboard from '@/views/Dashboard.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,37 +14,54 @@ const router = createRouter({
     {
       path: '/navbar',
       name: 'navbar',
-      component: Navbar
+      component: Navbar,
+      meta: { requiresAuth: true }, // On protège cette page
     },
     {
       path: '/employe',
       name: 'employe',
-      component: Employe
+      component: Employe,
+      meta: { requiresAuth: true, role: ['admin'] }, // Accessible par les utilisateurs et admins
     },
     {
       path: '/exemple',
       name: 'exemple',
-      component: Exemple
+      component: Exemple,
+      meta: { requiresAuth: true }, // On protège cette page
+
     },
     {
       path:'/',
       name:'home',
-      component:Home
+      component:Home,
+
     },
     {
       path:'/utilisateur',
       name:'utilisteur',
-      component:Utilisateur
+      component:Utilisateur,
+      meta: { requiresAuth: true }, // On protège cette page
+
     },
     {
-      path:'/demande',
-      name:'demande',
+      path:'/fangatahana',
+      name:'fangatahana',
       component:Demande
     }
     ,{
-      path:'/fangatahana',
-      name: 'fangatahana',
-      component: Demandee
+      path:'/demande',
+      name: 'demande',
+      component: Demandee,
+      meta: { requiresAuth: true }, // On protège cette page
+
+    },
+    {
+      path:'/dashboard',
+      name: 'dashboard',
+      component: Dashboard,
+      meta: { requiresAuth: true }, // On protège cette page
+
+
     }
    /* {
       path: '/about',
@@ -54,6 +72,41 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue')
     }*/
   ]
-})
+});
+// Fonction pour obtenir le rôle à partir du token
+const getRoleFromToken = (token) => {
+  if (!token) return null;
+
+  const payload = token.split('.')[1]; // Récupère la partie payload
+  const base64Url = payload.replace(/-/g, '+').replace(/_/g, '/'); // Normalise le payload
+  const jsonPayload = decodeURIComponent(atob(base64Url).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')); // Décodage
+  const parsedPayload = JSON.parse(jsonPayload); // Parse le JSON
+
+  return parsedPayload.role; // Récupère le rôle
+};
+
+// Guard de navigation
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('access_token'); // Vérifie si l'utilisateur a un token
+
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // Si la route nécessite une authentification
+    if (!token) {
+      next({ name: 'home' }); // Redirige vers la page de login
+    } else {
+      const userRole = getRoleFromToken(token); // Récupère le rôle à partir du token
+
+      if (to.meta.role && !to.meta.role.includes(userRole)) {
+        // Vérifie si le rôle de l'utilisateur est autorisé
+        next({ name: 'home' }); // Redirige vers la page de login si le rôle n'est pas autorisé
+      } else {
+        next(); // Permet la navigation
+      }
+    }
+  } else {
+    next(); // Permet la navigation pour les routes publiques
+  }
+});
+
 
 export default router

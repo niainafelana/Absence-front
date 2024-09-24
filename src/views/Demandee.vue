@@ -5,6 +5,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
+import api from '../api'; // Import de votre instance API
 
 //conversion date 
 const formatDate = (dateString) => {
@@ -42,10 +43,10 @@ const isSpecialAbsence = ref(false);
 
 onMounted(async () => {
   try {
-    const employeResponse = await axios.get('http://localhost:3000/employes/dataliste');
+    const employeResponse = await api.get('/employes/dataliste');
     employes.value = employeResponse.data;
 
-    const absenceResponse = await axios.get('http://localhost:3000/absences/dataliste');
+    const absenceResponse = await api.get('/absences/dataliste');
     absences.value = absenceResponse.data;
   } catch (err) {
     console.error('Erreur lors de la récupération des données:', err.response ? err.response.data : err.message);
@@ -99,7 +100,7 @@ const handleAbsenceChange = (e) => {
 
 const submitForm = async () => {
   try {
-    const response = await axios.put('http://localhost:3000/demandes/ajout', formData.value);
+    const response = await api.put('/demandes/ajout', formData.value);
 
     Swal.fire({
       icon: "success",
@@ -126,7 +127,7 @@ const submitForm = async () => {
 const demandees = ref([]);
 const listeDemande = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/demandes/tabledemande");
+    const response = await api.get("/demandes/tabledemande");
     demandees.value = response.data;
     console.log(response.data);
   } catch (error) {
@@ -144,14 +145,15 @@ const recherche = ref("");
 const mois = ref("");
 const filtrerDemandes = async () => {
   try {
-    const response = await axios.get("http://localhost:3000/demandes/filtrage", {
+    const response = await api.get("/demandes/filtrage", {
       params: {
         recherche: recherche.value,
-        mois: mois.value ? mois.value.split("-")[1] : null, // Extraire le mois
-        annee: mois.value ? mois.value.split("-")[0] : null, // Extraire l'année
+        mois: mois.value ? mois.value.split("-")[1] : null, 
+        annee: mois.value ? mois.value.split("-")[0] : null,
       },
     });
     demandees.value = response.data; // Met à jour la liste des demandes filtrées
+    console.log(response)
   } catch (error) {
     console.error("Error filtering demandes", error);
   }
@@ -219,6 +221,7 @@ const exportToCSV = () => {
     csvContent += cells + '\n';
   });
 
+  // Créer un Blob et télécharger le fichier
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -237,7 +240,7 @@ const ws_data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
 const actionIndex = ws_data[0].indexOf('Action');
 
-  const filteredData = ws_data.map(row => {
+  const filteredData = ws_data.map(row =>  {
     if (actionIndex !== -1) {
       return row.filter((_, colIndex) => colIndex !== actionIndex);
     }
@@ -249,14 +252,9 @@ const actionIndex = ws_data[0].indexOf('Action');
   // Créer une feuille avec les données filtrées
   const ws_filtered = XLSX.utils.aoa_to_sheet(filteredData);
 
+  
   // Formatage des colonnes (exemple : Nom, N° Matricule, Date de départ)
-  /*filteredData.forEach((row, rowIndex) => {
-    if (rowIndex > 0) {  // Exclure l'en-tête
-      ws_filtered[`A${rowIndex + 1}`].z = '@'; // Colonne Nom (texte)
-      ws_filtered[`B${rowIndex + 1}`].z = '0'; // Colonne N° Matricule (nombre)
-      ws_filtered[`F${rowIndex + 1}`].z = 'yyyy-mm-dd'; // Colonne Date de départ (format date)
-    }
-  });*/
+ 
 
   // Créer un nouveau classeur et ajouter la feuille filtrée
   const wb = XLSX.utils.book_new();

@@ -101,6 +101,71 @@
   </div>
 </template>
 <script setup>
+const exportToExcel = () => {
+  const table = dataTable.value;
+
+  // Convertir le tableau HTML en feuille de calcul
+  const ws = XLSX.utils.table_to_sheet(table);
+
+  // Obtenir les données du tableau, exclure la colonne "Action" par nom
+  const ws_data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+  console.log('Data avant filtration:', ws_data);
+
+  // Trouver l'index de la colonne "Action" dans les en-têtes
+  const actionIndex = ws_data[0].indexOf('Action');
+
+  // Supprimer la colonne "Action" en utilisant l'index trouvé
+  const filteredData = ws_data.map(row => {
+    if (actionIndex !== -1) {
+      return row.filter((_, colIndex) => colIndex !== actionIndex);
+    }
+    return row;
+  });
+
+  console.log('Data après filtration (doit inclure les dates):', filteredData);
+
+  // Créer une feuille avec les données filtrées
+  const ws_filtered = XLSX.utils.aoa_to_sheet(filteredData);
+
+  // Index des colonnes qui contiennent des dates
+  const dateDebutIndex = ws_data[0].indexOf('Date début');
+  const dateFinIndex = ws_data[0].indexOf('Date fin');
+  const dateRetourIndex = ws_data[0].indexOf('Date retour');
+
+  // Appliquer le format de date aux colonnes appropriées
+  filteredData.forEach((row, rowIndex) => {
+    if (rowIndex > 0) {  // Exclure l'en-tête
+      ws_filtered[`A${rowIndex + 1}`].z = '@'; // Exemple : Colonne Nom (texte)
+      ws_filtered[`B${rowIndex + 1}`].z = '0'; // Exemple : Colonne N° Matricule (nombre)
+
+      // Format Date pour 'Date début'
+      if (dateDebutIndex !== -1 && ws_filtered[XLSX.utils.encode_cell({ c: dateDebutIndex, r: rowIndex })]) {
+        ws_filtered[XLSX.utils.encode_cell({ c: dateDebutIndex, r: rowIndex })].z = 'yyyy-mm-dd';
+        ws_filtered[XLSX.utils.encode_cell({ c: dateDebutIndex, r: rowIndex })].t = 'd';
+      }
+
+      // Format Date pour 'Date fin'
+      if (dateFinIndex !== -1 && ws_filtered[XLSX.utils.encode_cell({ c: dateFinIndex, r: rowIndex })]) {
+        ws_filtered[XLSX.utils.encode_cell({ c: dateFinIndex, r: rowIndex })].z = 'yyyy-mm-dd';
+        ws_filtered[XLSX.utils.encode_cell({ c: dateFinIndex, r: rowIndex })].t = 'd';
+      }
+
+      // Format Date pour 'Date retour'
+      if (dateRetourIndex !== -1 && ws_filtered[XLSX.utils.encode_cell({ c: dateRetourIndex, r: rowIndex })]) {
+        ws_filtered[XLSX.utils.encode_cell({ c: dateRetourIndex, r: rowIndex })].z = 'yyyy-mm-dd';
+        ws_filtered[XLSX.utils.encode_cell({ c: dateRetourIndex, r: rowIndex })].t = 'd';
+      }
+    }
+  });
+
+  // Créer un nouveau classeur et ajouter la feuille filtrée
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws_filtered, 'Feuille1');
+
+  // Exporter le fichier Excel
+  XLSX.writeFile(wb, 'export.xlsx');
+};
+
 const submitForm = async () => {
     try {
         const response = await axios.put('http://localhost:3000/demandes/ajout', formData.value);

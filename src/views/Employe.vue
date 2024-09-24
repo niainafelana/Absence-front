@@ -4,7 +4,7 @@ import Utilisateur from "@/components/Utilisateur.vue";
 import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import Swal from "sweetalert2";
-
+import api from '../api'; // Import de votre instance API
 /*Ajouter Employe dans bd*/
 //variables
 const nom = ref("");
@@ -25,7 +25,7 @@ const creationEmploye = async () => {
     }
 
     try {
-        const response = await axios.put("http://localhost:3000/employes", {
+        const response = await api.put("/employes", {
             nom: nom.value,
             prenom: prenom.value,
             sexe: sexe.value,
@@ -60,8 +60,8 @@ const itemsPerPage = ref(5); // Nombre d'éléments par page
 // Méthode pour charger les employés depuis le backend
 const listeEmploye = async () => {
     try {
-        const response = await axios.get(
-            "http://localhost:3000/employes/listetable"
+        const response = await api.get(
+            "/employes/listetable"
         );
         employees.value = response.data.data;
     } catch (error) {
@@ -113,8 +113,8 @@ const editEmploye = (employee) => {
 /*Modification de l'employe*/
 const updateEmploye = async () => {
     try {
-        await axios.patch(
-            `http://localhost:3000/employes/modife/${edition.value}`,
+        await api.patch(
+            `/employes/modife/${edition.value}`,
             {
                 nom: nom.value,
                 prenom: prenom.value,
@@ -162,7 +162,7 @@ const deleteEmploye = async (id) => {
         });
 
         if (result.isConfirmed) {
-            await axios.delete(`http://localhost:3000/employes/delete/${id}`);
+            await api.delete(`/employes/delete/${id}`);
 
             Swal.fire({
                 title: "Succès",

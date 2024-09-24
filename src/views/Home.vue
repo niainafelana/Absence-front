@@ -1,9 +1,39 @@
 <script setup>
-import { ref } from 'vue';
 
+import { ref } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
 const currentDate = ref(new Date().toISOString().split('T')[0]);
 const currentTime = ref(new Date().toLocaleTimeString());
+// Déclaration des variables
+const email = ref('');
+const mdp = ref('');
+const error = ref(null);
+const router = useRouter(); // Pour la redirection après connexion
 
+// Méthode de connexion
+const login = async () => {
+  error.value = null; // Réinitialiser l'erreur
+  try {
+    const response = await axios.post('http://localhost:3000/utile/login', {
+      email: email.value,
+      mdp: mdp.value,
+    });
+    
+    // Stocker le token dans le localStorage
+    localStorage.setItem('access_token', response.data.access_token);
+
+    // Redirection après la connexion réussie
+    router.push('/demande'); // Exemples de redirection
+  } catch (err) {
+    if (err.response) {
+      // Afficher le message d'erreur renvoyé par le serveur
+      error.value = err.response.data.message;
+    } else {
+      error.value = 'Erreur de connexion';
+    }
+  }
+};
 
 </script>
 <template>
@@ -24,18 +54,18 @@ const currentTime = ref(new Date().toLocaleTimeString());
         <div class="container">
             <div class="form_container">
                 <h1> MIEZAKABSENCE</h1>
-                <form id="loginForm">
+                <form @submit.prevent="login" id="loginForm">
                     <div class="username">
-                        <label for="username">Administrateur</label>
+                        <label for="username">Email</label>
                         <br>
-                        <input type="text" placeholder="user" id="username" name="username">
+                        <input type="email" v-model="email" placeholder="email" id="username">
                     </div>
                     <br>
                     <div class="password">
                         <label for="password">Mot de passe</label>
                         <br>
                         <div class="mdp-input">
-                            <input type="password" id="password" name="password">
+                            <input type="password" v-model="mdp"  id="password" name="password">
                             <i class="fas fa-eye toggle-password"></i>
                         </div>
                         <br>
@@ -43,7 +73,6 @@ const currentTime = ref(new Date().toLocaleTimeString());
                     <br>
                     <div class="button">
                         <button type="submit"> Entrer  </button>
-                        <button id="btnNew"> Nouveau </button>
                     </div>
                 </form>
             </div>

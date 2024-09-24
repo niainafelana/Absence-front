@@ -1,18 +1,50 @@
 <template>
   <div class="top-navbar">
     <div class="left-section">
-      <span class="user-id">USER ID : 06PPD125</span>
+      <span class="user-id">Email:{{ email }}</span>
     </div>
     <div class="right-section">
-      <a href="#" class="visit-website">Visit Website</a>
+      <a href="#" class="visit-website">{{ nom }}</a>
       <div class="user-profile">
         <i class="bi bi-person"></i>
-        <span class="user-name">Joe Melton</span>
+        <span class="user-name">{{ role }}</span>
       </div>
     </div>
   </div>
 </template>
+<script setup>
 
+import { ref, onMounted } from 'vue';
+
+const nom = ref('');
+const role = ref('');
+const email= ref('')
+
+const decode = (str) => {
+  const base = str.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonpayload = decodeURIComponent(
+    atob(base)
+      .split('')
+      .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
+  return JSON.parse(jsonpayload);
+};
+
+const getUtilisateur = () => {
+  const token = localStorage.getItem('access_token'); // Assurez-vous que le nom est correct
+  if (token) {
+    const payload = token.split('.')[1]; // Récupère la partie du payload
+    const decoded = decode(payload); // Décodage manuel
+    nom.value = decoded.nom_user; // Extraire le nom
+    role.value = decoded.role; // Extraire le rôle
+    email.value=decoded.email;
+  }
+};
+
+onMounted(() => {
+  getUtilisateur();
+});</script>
 
 <style lang="scss" scoped>
 @import "../assets/style/globaly.scss";
