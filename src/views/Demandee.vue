@@ -1,38 +1,48 @@
 <script setup>
 import Navbar from "@/components/Navbar.vue";
 import Utilisateur from "@/components/Utilisateur.vue";
-import { ref, watch, onMounted, computed } from 'vue';
-import axios from 'axios';
-import Swal from 'sweetalert2';
-import * as XLSX from 'xlsx';
-import api from '../api'; // Import de votre instance API
+import { ref, watch, onMounted, computed } from "vue";
+import axios from "axios";
+import Swal from "sweetalert2";
+import * as XLSX from "xlsx";
+import api from "../api"; // Import de votre instance API
 
-//conversion date 
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  const jour = String(date.getDate()).padStart(2, '0');
-  const mois = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${jour}-${mois}-${year}`;
+//conversion date
+const formatDate = (date) => {
+  // S'assurer que la date est un objet Date
+  const d = new Date(date);
+
+  // Vérifier si la date est valide
+  if (isNaN(d)) {
+    return "Date invalide"; // Gérer les dates invalides
+  }
+
+  // Récupérer le jour, le mois et l'année
+  const day = ("0" + d.getDate()).slice(-2); // Ajouter un zéro devant si nécessaire
+  const month = ("0" + (d.getMonth() + 1)).slice(-2); // Les mois sont 0-indexés
+  const year = d.getFullYear();
+
+  // Retourner la date formatée au format "DD-MM-YYYY"
+  return `${day}-${month}-${year}`;
 };
 
-//variable 
+//variable
 const formData = ref({
-  id_employe: '',
-  id_absence: '',
-  datedeb: '',
-  jours_absence: '',
-  duredebut: '',
-  motif: '',
+  id_employe: "",
+  id_absence: "",
+  datedeb: "",
+  jours_absence: "",
+  duredebut: "",
+  motif: "",
 });
 
 const cancel = () => {
-  formData.value.id_employe = '';
-  formData.value.id_absence = '';
-  formData.value.datedeb = '';
-  formData.value.jours_absence = '';
-  formData.value.duredebut = '';
-  formData.value.motif = '';
+  formData.value.id_employe = "";
+  formData.value.id_absence = "";
+  formData.value.datedeb = "";
+  formData.value.jours_absence = "";
+  formData.value.duredebut = "";
+  formData.value.motif = "";
 };
 const employes = ref([]);
 const absences = ref([]);
@@ -43,13 +53,16 @@ const isSpecialAbsence = ref(false);
 
 onMounted(async () => {
   try {
-    const employeResponse = await api.get('/employes/dataliste');
+    const employeResponse = await api.get("/employes/dataliste");
     employes.value = employeResponse.data;
 
-    const absenceResponse = await api.get('/absences/dataliste');
+    const absenceResponse = await api.get("/absences/dataliste");
     absences.value = absenceResponse.data;
   } catch (err) {
-    console.error('Erreur lors de la récupération des données:', err.response ? err.response.data : err.message);
+    console.error(
+      "Erreur lors de la récupération des données:",
+      err.response ? err.response.data : err.message
+    );
     Swal.fire({
       icon: "error",
       title: "Erreur",
@@ -61,31 +74,38 @@ onMounted(async () => {
 
 //affiche le nom complet de l'employé
 const displayedEmployeName = computed(() => {
-  const selectedEmploye = employes.value.find(employe => employe.id_employe === formData.value.id_employe);
-  return selectedEmploye ? `${selectedEmploye.nom_employe} ${selectedEmploye.pre_employe}` : '';
+  const selectedEmploye = employes.value.find(
+    (employe) => employe.id_employe === formData.value.id_employe
+  );
+  return selectedEmploye
+    ? `${selectedEmploye.nom_employe} ${selectedEmploye.pre_employe}`
+    : "";
 });
 
 //maj id employe
 function handleEmployeInput(event) {
   const value = event.target.value;
-  const selectedEmploye = employes.value.find(employe => `${employe.nom_employe} ${employe.pre_employe}` === value);
+  const selectedEmploye = employes.value.find(
+    (employe) => `${employe.nom_employe} ${employe.pre_employe}` === value
+  );
   if (selectedEmploye) {
     formData.value.id_employe = selectedEmploye.id_employe;
   }
 }
 
-
 const handleAbsenceChange = (e) => {
   const id_absence = parseInt(e.target.value);
 
-  const selectionner = absences.value.find(absence => absence.id_absence === id_absence);
+  const selectionner = absences.value.find(
+    (absence) => absence.id_absence === id_absence
+  );
 
   if (selectionner) {
     if (selectionner.pour == 0) {
       formData.value.motif = selectionner.nom_absence;
       formData.value.jours_absence = selectionner.duree;
     } else {
-      formData.value.motif = '';
+      formData.value.motif = "";
       formData.value.jours_absence = 0;
       console.warn("L'absence sélectionnée ne correspond pas à 'pour = 0'");
     }
@@ -94,19 +114,15 @@ const handleAbsenceChange = (e) => {
   }
 };
 
-
-
-
-
 const submitForm = async () => {
   try {
-    const response = await api.put('/demandes/ajout', formData.value);
+    const response = await api.put("/demandes/ajout", formData.value);
 
     Swal.fire({
       icon: "success",
       title: "Succès",
       text: response.data.message || "Votre demande a été traitée avec succès.",
-      confirmButtonColor: "#3085d6"
+      confirmButtonColor: "#3085d6",
     });
     listeDemande();
     cancel();
@@ -115,13 +131,10 @@ const submitForm = async () => {
       icon: "error",
       title: "Erreur",
       text: error.response?.data?.error || "Une erreur est survenue.",
-      confirmButtonColor: "#d33"
+      confirmButtonColor: "#d33",
     });
   }
 };
-
-
-
 
 /*Affichage de la liste des demandes dans un tableau*/
 const demandees = ref([]);
@@ -138,22 +151,25 @@ onMounted(() => {
   listeDemande();
 });
 
-
-
 //filtrage des demandes
 const recherche = ref("");
 const mois = ref("");
+const dateDebut = ref("");
+const dateFin = ref(""); 
+
 const filtrerDemandes = async () => {
   try {
     const response = await api.get("/demandes/filtrage", {
       params: {
         recherche: recherche.value,
-        mois: mois.value ? mois.value.split("-")[1] : null, 
+        mois: mois.value ? mois.value.split("-")[1] : null,
         annee: mois.value ? mois.value.split("-")[0] : null,
+        date_debut: dateDebut.value || null, // Ajout de la date de début
+        date_fin: dateFin.value || null, // Ajout de la date de fin
       },
     });
     demandees.value = response.data; // Met à jour la liste des demandes filtrées
-    console.log(response)
+    console.log(response);
   } catch (error) {
     console.error("Error filtering demandes", error);
   }
@@ -167,104 +183,132 @@ const currentPage = ref(1); // Page actuelle
 const itemsPerPage = ref(5); // Nombre d'éléments par page
 
 const paginatedAbsences = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage.value;
-    const end = start + itemsPerPage.value;
-    return demandees.value.slice(start, end);
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return demandees.value.slice(start, end);
 });
 
 const totalPages = computed(() => {
-    return Math.ceil(demandees.value.length / itemsPerPage.value);
+  return Math.ceil(demandees.value.length / itemsPerPage.value);
 });
 
 const prevPage = () => {
-    if (currentPage.value > 1) {
-        currentPage.value--;
-    }
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
 };
 
 const nextPage = () => {
-    if (currentPage.value < totalPages.value) {
-        currentPage.value++;
-    }
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
 };
 
 //importation excel
 const dataTable = ref(null);
-const selectedFormat = ref('csv');
+const selectedFormat = ref("csv");
 const exportData = () => {
-  if (selectedFormat.value === 'csv') {
+  if (selectedFormat.value === "csv") {
     exportToCSV();
-  } else if (selectedFormat.value === 'excel') {
+  } else if (selectedFormat.value === "excel") {
     exportToExcel();
   }
 };
 
 const exportToCSV = () => {
-  const table = dataTable.value;
-  let csvContent = '';
+  if (demandees.value.length === 0) {
+    console.error("Pas de données à exporter.");
+    return;
+  }
 
-  // Récupérer les en-têtes, exclure "Action"
-  const headers = Array.from(table.querySelectorAll('thead th'))
-    .map(th => th.innerText)
-    .filter(header => header !== 'Action') // Exclure la colonne "Action"
-    .join(',');
+  // Définir les en-têtes du fichier CSV
+  const headers = [
+    "Nom et Prénom",
+    "Matricule",
+    "Motif Employé",
+    "Jours d'absence",
+    "Solde Employé",
+    "Date de départ",
+    "Date de retour",
+    "Motif",
+    "Date Fin",
+  ];
+  let csvContent = headers.join(",") + "\n";
 
-  csvContent += headers + '\n';
+  // Parcourir les données et ajouter chaque ligne au fichier CSV
+  demandees.value.forEach((item) => {
+    const row = [
+      `${item.employe.nom_employe} ${item.employe.pre_employe}`, // Nom et Prénom
+      "E006", // Matricule (vous pouvez remplacer cette valeur par une vraie donnée dynamique)
+      item.employe.motif_employe, // Motif Employé
+      item.jours_absence, // Jours d'absence
+      item.employe.solde_employe, // Solde Employé
+      formatDate(item.date_debut), // Date de départ
+      formatDate(item.date_retour), // Date de retour
+      item.motif, // Motif
+      formatDate(item.date_fin), // Date Fin
+    ].join(",");
 
-  // Récupérer les lignes, exclure "Action"
-  const rows = Array.from(table.querySelectorAll('tbody tr'));
-  rows.forEach(row => {
-    const cells = Array.from(row.querySelectorAll('td'))
-      .filter((td, index) => headers[index] !== 'Action') // Exclure les cellules correspondant à "Action"
-      .map(td => td.innerText)
-      .join(',');
-    csvContent += cells + '\n';
+    csvContent += row + "\n";
   });
 
-  // Créer un Blob et télécharger le fichier
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  // Créer un blob pour le fichier CSV
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+  // Créer un lien pour télécharger le fichier
+  const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'export.csv');
-  link.style.visibility = 'hidden';
+  link.setAttribute("href", url);
+  link.setAttribute("download", "demandes_export.csv");
+  link.style.visibility = "hidden";
+
+  // Ajouter le lien à la page et déclencher le téléchargement
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 };
 
 const exportToExcel = () => {
-const table = dataTable.value;
-const ws = XLSX.utils.table_to_sheet(table);
-const ws_data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+  if (demandees.value.length === 0) {
+    console.error("Pas de données à exporter.");
+    return;
+  }
 
-const actionIndex = ws_data[0].indexOf('Action');
+  const ws_data = demandees.value.map((item) => [
+    `${item.employe.nom_employe} ${item.employe.pre_employe}`, // Nom et Prénom
+    "E006", // Matricule (à remplacer avec les données si nécessaire)
+    item.employe.motif_employe, // Motif Employé
+    item.jours_absence, // Jours d'absence
+    item.employe.solde_employe, // Solde Employé
+    formatDate(item.date_debut), // Date de départ
+    formatDate(item.date_retour), // Date de retour
+    item.motif, // Motif
+    formatDate(item.date_fin), // Date Fin
+  ]);
 
-  const filteredData = ws_data.map(row =>  {
-    if (actionIndex !== -1) {
-      return row.filter((_, colIndex) => colIndex !== actionIndex);
-    }
-    return row;
-  });
+  // Ajouter les en-têtes de colonne
+  ws_data.unshift([
+    "Nom et Prénom",
+    "Matricule",
+    "Motif Employé",
+    "Jours d'absence",
+    "Solde Employé",
+    "Date de départ",
+    "Date de retour",
+    "Motif",
+    "Date Fin",
+  ]);
 
-  console.log('Data après filtration (doit inclure datefin):', filteredData);
+  // Créer une feuille avec les données
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
-  // Créer une feuille avec les données filtrées
-  const ws_filtered = XLSX.utils.aoa_to_sheet(filteredData);
-
-  
-  // Formatage des colonnes (exemple : Nom, N° Matricule, Date de départ)
- 
-
-  // Créer un nouveau classeur et ajouter la feuille filtrée
+  // Créer un nouveau classeur et ajouter la feuille
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws_filtered, 'Feuille1');
+  XLSX.utils.book_append_sheet(wb, ws, "Feuille1");
 
   // Exporter le fichier Excel
-  XLSX.writeFile(wb, 'export.xlsx');
+  XLSX.writeFile(wb, "export.xlsx");
 };
-
-
 function imprimerDemande(demande) {
   const css = `
     <style>
@@ -404,7 +448,8 @@ function imprimerDemande(demande) {
           <section class="my-6">
             <h2 class="text-lg font-bold uppercase text-center mb-4">Demande d'Autorisation d'Absence</h2>
             <div class="space-y-2 text-sm">
-              <p><strong>Nom(s) et prénom(s) :</strong> ${demande.employe.nom_employe} ${demande.employe.pre_employe}</p>
+              <p><strong>Nom(s) et prénom(s) :</strong> ${demande.employe.nom_employe} ${demande.employe.pre_employe
+    }</p>
               <p><strong>N° Matricule :</strong> E006</p>
               <p><strong>Fonction :</strong> ${demande.employe.motif_employe}</p>
               <p><strong>Nombre de jours :</strong> ${demande.jours_absence}</p>
@@ -453,7 +498,8 @@ function imprimerDemande(demande) {
           <section class="my-6">
             <h2 class="text-lg font-bold uppercase text-center mb-4">Demande d'Autorisation d'Absence</h2>
             <div class="space-y-2 text-sm">
-              <p><strong>Nom(s) et prénom(s) :</strong> ${demande.employe.nom_employe} ${demande.employe.pre_employe}</p>
+              <p><strong>Nom(s) et prénom(s) :</strong> ${demande.employe.nom_employe} ${demande.employe.pre_employe
+    }</p>
               <p><strong>N° Matricule :</strong> E006</p>
               <p><strong>Fonction :</strong> ${demande.employe.motif_employe}</p>
               <p><strong>Nombre de jours :</strong> ${demande.jours_absence}</p>
@@ -481,18 +527,13 @@ function imprimerDemande(demande) {
     `;
 
   // Code pour ouvrir une fenêtre d'impression
-  const fenetreImpression = window.open('', '', 'width=800,height=600');
+  const fenetreImpression = window.open("", "", "width=800,height=600");
   fenetreImpression.document.open();
   fenetreImpression.document.write(contenu);
   fenetreImpression.document.close();
   fenetreImpression.focus();
   fenetreImpression.print();
 }
-
-
-
-
-
 </script>
 <template>
 
@@ -518,31 +559,40 @@ function imprimerDemande(demande) {
                   <div class="flex items-center gap-2">
                     <label for="input2" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Recherche</label>
                     <input type="text" id="input2" v-model="recherche" @input="filtrerDemandes"
-                      class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                      class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
                   </div>
+
                   <div class="flex items-center gap-2">
-                    <label for="input1" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Mois</label>
-                    <input type="month" id="input1" v-model="mois" @input="filtrerDemandes"
-                      class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                  </div>
-                  <div class="flex items-center gap-2" style="max-width: 250px;">
-                    <select class="form-control form-control-sm" aria-label="Choose option" v-model="selectedFormat"
-                      style="flex: 1; height: 32px; border-radius: 0.375rem; border: 1px solid #ced4da; font-size: 0.875rem; margin-left: 10px;">
-                      <option selected>Choose...</option>
-                      <option value="csv">CSV</option>
-                      <option value="excel">Excel</option>
-                                          </select>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" id="button-addon2" @click="exportData"
-                      style="height: 32px; font-size: 0.75rem; border-radius: 0.375rem; border-color: #ced4da; margin-left: 10px;">Button</button>
-                  </div>
+    <label for="dateDebut" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Mois</label>
+    <input type="month" id="dateDebut" v-model="mois" @input="filtrerDemandes"
+      class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+  </div>
+                 
+                  <div class="flex items-center gap-2">
+    <label for="dateDebut" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Date de début</label>
+    <input type="date" id="dateDebut" v-model="dateDebut" @input="filtrerDemandes"
+      class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+  </div>
 
-
-
+  <div class="flex items-center gap-2">
+    <label for="dateFin" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Date de fin</label>
+    <input type="date" id="dateFin" v-model="dateFin" @input="filtrerDemandes"
+      class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+  </div>
+                  <div class="flex items-center gap-3" style="max-width: 300px;">
+  <span class="export-label">Export:</span>
+  <button class="export-button" type="button" id="button-addon-csv" @click="exportToCSV">
+    CSV
+  </button>
+  <button class="export-button" type="button" id="button-addon-excel" @click="exportToExcel">
+    Excel
+  </button>
+</div>
                 </div>
 
+                
               </div>
             </div>
-
 
             <!--Liste des employes-->
             <div class="table-scroll-container">
@@ -559,13 +609,15 @@ function imprimerDemande(demande) {
                     <th>Motif</th>
                     <th>Date Fin</th>
                     <th>Action</th>
-
                   </tr>
                 </thead>
 
                 <tbody>
                   <tr v-for="demandee in paginatedAbsences" :key="demandee.id">
-                    <td>{{ demandee.employe.nom_employe }}<br>{{ demandee.employe.pre_employe }}
+                    <td>
+                      {{ demandee.employe.nom_employe }}<br />{{
+                        demandee.employe.pre_employe
+                      }}
                     </td>
                     <td>E006</td>
                     <td>{{ demandee.employe.motif_employe }}</td>
@@ -580,7 +632,8 @@ function imprimerDemande(demande) {
                         <i class="fa-solid fa-pen-to-square"></i>
                       </button>
                       <button type="button" class="btn btn-info ms-2" @click.stop="imprimerDemande(demandee)">
-                        <i class="fa-solid fa-print"></i> </button>
+                        <i class="fa-solid fa-print"></i>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -589,45 +642,45 @@ function imprimerDemande(demande) {
           </div>
         </div>
       </div>
-       
- <!-- Navigation à insérer ici -->
- <nav aria-label="Page navigation example" class="navigation">
-                    <ul class="flex items-center -space-x-px h-20 text-sm">
-                        <li>
-                            <a href="#" @click.prevent="prevPage"
-                                class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-                                <span class="sr-only">Previous</span>
-                                <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true"
-                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2" d="M5 1 1 5l4 4" />
-                                </svg>
-                            </a>
-                        </li>
-                        <li v-for="page in totalPages" :key="page">
-                            <a href="#" @click.prevent="goToPage(page)" :class="[
-                                'flex items-center justify-center px-3 h-8 leading-tight',
-                                page === currentPage
-                                    ? 'z-10 text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
-                                    : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-                            ]">
-                                {{ page }}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" @click.prevent="nextPage"
-                                class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-                                <span class="sr-only">Next</span>
-                                <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true"
-                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2" d="m1 9 4-4-4-4" />
-                                </svg>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-       
+
+      <!-- Navigation à insérer ici -->
+      <nav aria-label="Page navigation example" class="navigation">
+        <ul class="flex items-center -space-x-px h-20 text-sm">
+          <li>
+            <a href="#" @click.prevent="prevPage"
+              class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+              <span class="sr-only">Previous</span>
+              <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 6 10">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M5 1 1 5l4 4" />
+              </svg>
+            </a>
+          </li>
+          <li v-for="page in totalPages" :key="page">
+            <a href="#" @click.prevent="goToPage(page)" :class="[
+              'flex items-center justify-center px-3 h-8 leading-tight',
+              page === currentPage
+                ? 'z-10 text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
+                : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
+            ]">
+              {{ page }}
+            </a>
+          </li>
+          <li>
+            <a href="#" @click.prevent="nextPage"
+              class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+              <span class="sr-only">Next</span>
+              <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 6 10">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="m1 9 4-4-4-4" />
+              </svg>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
       <!--Modal creation employe-->
       <div class="modal fade" id="exampleModal" tabindex="-2" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-s">
@@ -639,7 +692,7 @@ function imprimerDemande(demande) {
                   font-weight: bold;
                   text-align: center;
                 ">
-                Créer Nouveau Employe
+                Créer Nouvelle Demande
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -675,10 +728,7 @@ function imprimerDemande(demande) {
                       class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
                       Type d'absence
                     </label>
-
                   </div>
-
-
                 </div>
 
                 <br />
@@ -750,7 +800,7 @@ function imprimerDemande(demande) {
 body {
   color: #566787;
   background-color: $text;
-  font-family: 'Times New Roman', Times, serif;
+  font-family: "Times New Roman", Times, serif;
   font-size: 15px;
 }
 
@@ -773,23 +823,28 @@ body {
   margin-left: 15.5%;
   box-shadow: 10px 10px 10px 10px#F0F0F0;
   flex-direction: column;
-
 }
+
 /*<nav aria-label="Page navigation example" style="position: absolute; bottom: 20px; right: 0; left: 0;">*/
-  
+
 .table-responsive {
   overflow-x: hidden;
   width: 100%;
   margin: 0 auto;
   margin-top: -0.6%;
 }
+
 .table-header {
-  position: -webkit-sticky; /* Pour les navigateurs WebKit (Safari, Chrome) */
+  position: -webkit-sticky;
+  /* Pour les navigateurs WebKit (Safari, Chrome) */
   position: sticky;
   top: 0;
-  background-color: #f8f9fa; /* Couleur de fond pour le contraste avec le contenu défilant */
-  z-index: 10; /* Assurez-vous que l'en-tête reste au-dessus du corps de la table */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optionnel : ajout d'une ombre pour améliorer la visibilité */
+  background-color: #f8f9fa;
+  /* Couleur de fond pour le contraste avec le contenu défilant */
+  z-index: 10;
+  /* Assurez-vous que l'en-tête reste au-dessus du corps de la table */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  /* Optionnel : ajout d'une ombre pour améliorer la visibilité */
 }
 
 .table-wrapper {
@@ -875,16 +930,34 @@ table.table td:last-child i {
   display: flex;
   padding-bottom: 13%;
 }
-.navigation{
-  position: absolute;  
-  bottom:10px; 
+
+.navigation {
+  position: absolute;
+  bottom: 10px;
   width: 100%;
-  left:15.5%;
-  position:fixed;
-
-
-  
-  
-  
+  left: 15.5%;
+  position: fixed;
 }
+.export-label {
+    font-weight: bold;
+    margin-top: 5px; /* Aligne le texte légèrement au-dessus des boutons */
+    white-space: nowrap; /* Empêche le texte de se casser */
+  }
+
+  .export-button {
+    flex: 1; 
+    min-width: 100px; 
+    height: 32px;
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+    background-color: $secondary; /* Couleur du fond bleu */
+    color: white; /* Couleur du texte blanc */
+    border: 1px solid #007bff; /* Bordure bleu */
+    margin-top: -3px; /* Légèrement plus haut */
+    padding: 0 10px; /* Ajoute un peu d'espace intérieur horizontal */
+  }
+  .export-button:hover {
+    background-color:$primary; /* Couleur de fond bleu foncé lors du survol */
+    transform: scale(1.05); /* Légère augmentation de la taille lors du survol */
+  }
 </style>

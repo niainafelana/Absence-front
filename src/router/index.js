@@ -7,6 +7,7 @@ import Utilisateur from '@/components/Utilisateur.vue';
 import Demande from '@/views/Demande.vue';
 import Demandee from '@/views/Demandee.vue';
 import Dashboard from '@/views/Dashboard.vue';
+import Accueil from '@/views/Accueil.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,7 +22,7 @@ const router = createRouter({
       path: '/employe',
       name: 'employe',
       component: Employe,
-      meta: { requiresAuth: true, role: ['admin'] }, // Accessible par les utilisateurs et admins
+      meta: { requiresAuth: true, role: ['ADMINISTRATEUR'] }, // Accessible par les utilisateurs et admins
     },
     {
       path: '/exemple',
@@ -42,6 +43,12 @@ const router = createRouter({
       component:Utilisateur,
       meta: { requiresAuth: true }, // On protège cette page
 
+    },
+    {
+path:'/accueil',
+name:'accueil',
+component:Accueil,
+meta:{requiresAuth:true},
     },
     {
       path:'/fangatahana',
@@ -79,7 +86,8 @@ const getRoleFromToken = (token) => {
 
   const payload = token.split('.')[1]; // Récupère la partie payload
   const base64Url = payload.replace(/-/g, '+').replace(/_/g, '/'); // Normalise le payload
-  const jsonPayload = decodeURIComponent(atob(base64Url).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')); // Décodage
+  const jsonPayload = decodeURIComponent(atob(base64Url).split('').map((c) => '%' 
+  + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')); // Décodage
   const parsedPayload = JSON.parse(jsonPayload); // Parse le JSON
 
   return parsedPayload.role; // Récupère le rôle
@@ -92,21 +100,24 @@ router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     // Si la route nécessite une authentification
     if (!token) {
-      next({ name: 'home' }); // Redirige vers la page de login
+      localStorage.removeItem('access_token'); // Supprime le token si non valide
+      next({ name: 'home', replace: true }); // Redirige vers login sans possibilité de retour
     } else {
       const userRole = getRoleFromToken(token); // Récupère le rôle à partir du token
 
       if (to.meta.role && !to.meta.role.includes(userRole)) {
-        // Vérifie si le rôle de l'utilisateur est autorisé
-        next({ name: 'home' }); // Redirige vers la page de login si le rôle n'est pas autorisé
+        // Si l'utilisateur n'a pas le bon rôle
+        localStorage.removeItem('access_token'); // Supprime le token si le rôle est incorrect
+        next({ name: 'home', replace: true }); // Redirige vers login sans possibilité de retour
       } else {
-        next(); // Permet la navigation
+        next(); // Permet la navigation si tout est correct
       }
     }
   } else {
     next(); // Permet la navigation pour les routes publiques
   }
 });
+
 
 
 export default router

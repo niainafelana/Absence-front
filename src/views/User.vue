@@ -212,12 +212,12 @@ onMounted(() => {
                         <div class="table-title">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h2>A propos des employes</h2>
+                                    <h2>Les Utilisateurs</h2>
                                 </div>
                                 <div class="col-sm-6">
                                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
                                         data-bs-target="#exampleModal">
-                                        <i class="fa-solid fa-plus-minus"></i><span>Add New Employee</span>
+                                        <i class="fa-solid fa-plus-minus"></i><span>Nouveau Utilisateur</span>
                                     </button>
                                 </div>
                             </div>
@@ -228,15 +228,9 @@ onMounted(() => {
                             <table class="table table-striped table-hover">
                                 <thead class="table-header">
                                     <tr>
-                                        <th>Id</th>
                                         <th>Nom</th>
-                                        <th>Prenom</th>
-                                        <th>Sexe</th>
-                                        <th>Motif</th>
-                                        <th>Solde d'absence</th>
-                                        <th>Plafonnement</th>
-                                        <th>PlafBool</th>
-                                        <th>Action</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
                                     </tr>
                                 </thead>
 
@@ -317,7 +311,7 @@ onMounted(() => {
                   font-weight: bold;
                   text-align: center;
                 ">
-                                Créer Nouveau Employe
+                                Créer Nouveau Utilisateur
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>

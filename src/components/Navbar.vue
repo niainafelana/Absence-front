@@ -2,6 +2,7 @@
 import { RouterLink } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { onMounted } from 'vue';
+import { computed } from 'vue';
 
 const router = useRouter();
 
@@ -27,6 +28,28 @@ onMounted(() => {
     window.history.pushState(null, '', window.location.href);
   };
 });
+
+
+const getRoleFromToken = (token) => {
+  if (!token) return null;
+
+  const payload = token.split('.')[1]; // Récupère la partie payload
+  const base64Url = payload.replace(/-/g, '+').replace(/_/g, '/'); // Normalise le payload
+  const jsonPayload = decodeURIComponent(atob(base64Url).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')); // Décodage
+  const parsedPayload = JSON.parse(jsonPayload); // Parse le JSON
+
+  return parsedPayload.role; // Récupère le rôle
+};
+
+
+// Récupère le rôle de l'utilisateur à partir du token, s'il est authentifié
+const userRole = computed(() => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    return getRoleFromToken(token); // Extrait et retourne le rôle
+  }
+  return null;
+});
 </script>
 
 <template>
@@ -39,17 +62,23 @@ onMounted(() => {
             <a href="" class="d-flex align-items-center text-white text-decoration-none" id="dropdownUser1"
               data-bs-toggle="dropdown" aria-expanded="false">
               <img src="../assets/sary/1721891607125.jpg" alt="hugenerd" width="30" height="30" class="rounded-circle">
-              <span class="fs-6 d-none d-sm-inline">MiezakaAbsence</span> </a>
+              <span class="fs-6 d-none d-sm-inline">GestionAbsences</span> </a>
 
             <!--Navbar-->
             <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
               <li class="nav-item">
-                <RouterLink to="/dasboard" class="nav-link align-middle px-0">
+                <RouterLink to="/accueil" class="nav-link align-middle px-0">
+                  <i class="fs-5 bi bi-house-fill"></i>
+                  <span class="ms-1 d-none d-sm-inline">Accueil</span>
+                </RouterLink>
+              </li>
+              <li class="nav-item">
+                <RouterLink to="/dashboard" class="nav-link align-middle px-0">
                   <i class="fs-5 bi bi-bar-chart-line-fill"></i>
                   <span class="ms-1 d-none d-sm-inline">Dashboard</span>
                 </RouterLink>
               </li>
-              <li class="nav-item">
+              <li class="nav-item" v-if="userRole === 'ADMINISTRATEUR'">
                 <RouterLink to="/employe" class="nav-link align-middle px-0">
                   <i class="fs-5 bi bi-file-earmark-person"></i> <span class="ms-1 d-none d-sm-inline">Employe</span>
                 </RouterLink>
@@ -66,7 +95,7 @@ onMounted(() => {
               <li class="nav-item" style="list-style: none;">
                 <RouterLink to="" class="nav-link align-middle px-0">
                   <i class=" fs-5 bi bi-box-arrow-left"></i>
-                  <span class="ms-1 d-none d-sm-inline" @click="logout">Demande</span>
+                  <span class="ms-1 d-none d-sm-inline" @click="logout">Deconnexion</span>
                 </RouterLink>
               </li>
             </div>
