@@ -24,7 +24,7 @@ import { ref, onMounted, computed } from "vue";
                     </div>
                     <div class="schema">
                         <!-- Image du schéma sans card -->
-                        <img src="../assets/sary/prise-rendez-vous-calendrier_23-2148553115.avif" alt="Schéma"
+                        <img src="../assets/photos/prise-rendez-vous-calendrier_23-2148553115.avif" alt="Schéma"
                             class="schema-image" />
                     </div>
                 </div>
@@ -67,7 +67,6 @@ body {
 .absence-section {
     display: flex;
     margin-top: 50px;
-    /* Augmenter l'espace en haut pour déplacer la section */
     width: 100%;
     justify-content: space-between;
     align-items: center;

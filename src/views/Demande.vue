@@ -1,201 +1,237 @@
-<template>
-  <div class="print-container">
-    <!-- Bouton d'impression -->
-
-    <!-- Contenu à imprimer -->
-    <div class="page">
-      <!-- Première partie (Originale) -->
-      <div class="content">
-        <header class="flex justify-between items-start border-b pb-4">
-          <div class="flex items-center space-x-4">
-            <div class="w-20">
-              <img src="../assets/sary/1721891607125.jpg" alt="Société Miezaka Logo" />
-            </div>
-            <div>
-              <h2 class="text-lg font-bold uppercase">Société Miezaka EURL</h2>
-              <p>Téléphone : 75 516 55</p>
-              <p>Fax : 75 52125</p>
-              <p>Fianarantsoa - 301</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <p>Fianarantsoa, 02/09/2024</p>
-          </div>
-        </header>
-
-        <section class="my-6">
-          <h2 class="text-lg font-bold uppercase text-center mb-4">Demande d'Autorisation d'Absence</h2>
-          <div class="space-y-2 text-sm">
-            <p><strong>Nom(s) et prénom(s) :</strong> WAI Eric Bernard</p>
-            <p><strong>N° Matricule :</strong> E006</p>
-            <p><strong>Fonction :</strong> MAGASINIER</p>
-            <p><strong>Nombre de jours :</strong> 3,00</p>
-            <p><strong>Congé restant :</strong> 0,00</p>
-            <p><strong>Date de départ :</strong> 05/09/2024</p>
-            <p><strong>Date de retour :</strong> 08/09/2024</p>
-            <p><strong>Motif :</strong> Complément Congé</p>
-          </div>
-        </section>
-
-        <footer class="flex justify-between ">
-          <div class="text-center text-sm">
-            <p>L'intéressé</p>
-          </div>
-          <div class="text-center text-sm">
-            <p>Collègue (Sign+Prénom)</p>
-          </div>
-          <div class="text-center text-sm">
-            <p>La Direction</p>
-          </div>
-        </footer>
-      </div>
-
-      <div class="border-t-2 border-gray-400 my-20"></div>
-
-      <!-- Deuxième partie (Copie) -->
-      <div class="content">
-        <header class="flex justify-between items-start border-b pb-4">
-          <div class="flex items-center space-x-4">
-            <div class="w-20">
-              <img src="../assets/sary/1721891607125.jpg" alt="Société Miezaka Logo" />
-            </div>
-            <div>
-              <h2 class="text-lg font-bold uppercase">Société Miezaka EURL</h2>
-              <p>Téléphone : 75 516 55</p>
-              <p>Fax : 75 52125</p>
-              <p>Fianarantsoa - 301</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <p>Fianarantsoa, 02/09/2024</p>
-          </div>
-        </header>
-
-        <section class="my-6">
-          <h2 class="text-lg font-bold uppercase text-center mb-4">Demande d'Autorisation d'Absence</h2>
-          <div class="space-y-2 text-sm">
-            <p><strong>Nom(s) et prénom(s) :</strong> WAI Eric Bernard</p>
-            <p><strong>N° Matricule :</strong> E006</p>
-            <p><strong>Fonction :</strong> MAGASINIER</p>
-            <p><strong>Nombre de jours :</strong> 3,00</p>
-            <p><strong>Congé restant :</strong> 0,00</p>
-            <p><strong>Date de départ :</strong> 05/09/2024</p>
-            <p><strong>Date de retour :</strong> 08/09/2024</p>
-            <p><strong>Motif :</strong> Complément Congé</p>
-          </div>
-        </section>
-
-        <footer class="flex justify-between mt-10">
-          <div class="text-center text-sm">
-            <p>L'intéressé</p>
-          </div>
-          <div class="text-center text-sm">
-            <p>Collègue (Sign+Prénom)</p>
-          </div>
-          <div class="text-center text-sm">
-            <p>La Direction</p>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </div>
-</template>
 <script setup>
-const exportToExcel = () => {
-  const table = dataTable.value;
+import Navbar from "@/components/Navbar.vue";
+import Utilisateur from "@/components/Utilisateur.vue";
+import { ref, onMounted } from "vue";
+import { Chart, registerables } from 'chart.js';
+import api from '../api'; // Assurez-vous que le chemin est correct
 
-  // Convertir le tableau HTML en feuille de calcul
-  const ws = XLSX.utils.table_to_sheet(table);
+// Enregistrer les composants nécessaires de Chart.js
+Chart.register(...registerables);
 
-  // Obtenir les données du tableau, exclure la colonne "Action" par nom
-  const ws_data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-  console.log('Data avant filtration:', ws_data);
+const absenceChart = ref(null);
+const search = ref({
+  nom_employe: '',
+  pre_employe: '',
+  startDate: '',
+  endDate: ''
+});
+const data = ref({
+  totalAbsences: 0,
+  absencesByMonth: []
+});
+const error = ref(null);
 
-  // Trouver l'index de la colonne "Action" dans les en-têtes
-  const actionIndex = ws_data[0].indexOf('Action');
+// Fonction pour récupérer les données d'absences depuis l'API
+async function fetchAbsences() {
+  error.value = null; // Réinitialiser l'erreur
+  try {
+    const response = await api.get('/dashboard/state', { params: search.value });
 
-  // Supprimer la colonne "Action" en utilisant l'index trouvé
-  const filteredData = ws_data.map(row => {
-    if (actionIndex !== -1) {
-      return row.filter((_, colIndex) => colIndex !== actionIndex);
+    if (!response.data) {
+      throw new Error("Aucune donnée retournée par l'API.");
     }
-    return row;
-  });
 
-  console.log('Data après filtration (doit inclure les dates):', filteredData);
+    data.value = response.data;
 
-  // Créer une feuille avec les données filtrées
-  const ws_filtered = XLSX.utils.aoa_to_sheet(filteredData);
-
-  // Index des colonnes qui contiennent des dates
-  const dateDebutIndex = ws_data[0].indexOf('Date début');
-  const dateFinIndex = ws_data[0].indexOf('Date fin');
-  const dateRetourIndex = ws_data[0].indexOf('Date retour');
-
-  // Appliquer le format de date aux colonnes appropriées
-  filteredData.forEach((row, rowIndex) => {
-    if (rowIndex > 0) {  // Exclure l'en-tête
-      ws_filtered[`A${rowIndex + 1}`].z = '@'; // Exemple : Colonne Nom (texte)
-      ws_filtered[`B${rowIndex + 1}`].z = '0'; // Exemple : Colonne N° Matricule (nombre)
-
-      // Format Date pour 'Date début'
-      if (dateDebutIndex !== -1 && ws_filtered[XLSX.utils.encode_cell({ c: dateDebutIndex, r: rowIndex })]) {
-        ws_filtered[XLSX.utils.encode_cell({ c: dateDebutIndex, r: rowIndex })].z = 'yyyy-mm-dd';
-        ws_filtered[XLSX.utils.encode_cell({ c: dateDebutIndex, r: rowIndex })].t = 'd';
-      }
-
-      // Format Date pour 'Date fin'
-      if (dateFinIndex !== -1 && ws_filtered[XLSX.utils.encode_cell({ c: dateFinIndex, r: rowIndex })]) {
-        ws_filtered[XLSX.utils.encode_cell({ c: dateFinIndex, r: rowIndex })].z = 'yyyy-mm-dd';
-        ws_filtered[XLSX.utils.encode_cell({ c: dateFinIndex, r: rowIndex })].t = 'd';
-      }
-
-      // Format Date pour 'Date retour'
-      if (dateRetourIndex !== -1 && ws_filtered[XLSX.utils.encode_cell({ c: dateRetourIndex, r: rowIndex })]) {
-        ws_filtered[XLSX.utils.encode_cell({ c: dateRetourIndex, r: rowIndex })].z = 'yyyy-mm-dd';
-        ws_filtered[XLSX.utils.encode_cell({ c: dateRetourIndex, r: rowIndex })].t = 'd';
-      }
-    }
-  });
-
-  // Créer un nouveau classeur et ajouter la feuille filtrée
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws_filtered, 'Feuille1');
-
-  // Exporter le fichier Excel
-  XLSX.writeFile(wb, 'export.xlsx');
-};
-
-const submitForm = async () => {
-    try {
-        const response = await axios.put('http://localhost:3000/demandes/ajout', formData.value);
-        
-        Swal.fire({
-            icon: "success",
-            title: "Succès",
-            text: response.data.message || "Votre demande a été traitée avec succès.",
-            confirmButtonColor: "#3085d6"
-        });
-    } catch (error) {
-    // Vérifier la structure de l'erreur
-    if (error.response && error.response.data && error.response.data.error) {
-      const errorMessage = error.response.data.error.message;
-
-      // Afficher l'erreur spécifique avec SweetAlert
-      Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: errorMessage
-      });
-    } else {
-      // Afficher une erreur générique si aucune information spécifique n'est fournie
-      Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: 'Une erreur est survenue. Veuillez réessayer plus tard.'
-      });
-    }
+    // Une fois les données récupérées, initialiser le graphique
+    initChart();
+  } catch (err) {
+    console.error('Erreur lors de la récupération des données :', err);
+    error.value = 'Erreur lors de la récupération des données. Vérifiez vos critères de recherche.';
   }
 }
+
+// Fonction pour initialiser le graphique
+let chartInstance = null;
+
+function initChart() {
+  // Tableau des noms de mois
+  const monthNames = [
+    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  ];
+
+  // Convertir les numéros de mois en noms
+  const months = data.value.absencesByMonth.map(entry => monthNames[entry.month - 1]);
+  const totalAbsences = data.value.absencesByMonth.map(entry => entry.total_absences);
+
+  const ctx = absenceChart.value.getContext('2d');
+
+  // Détruire le graphique précédent s'il existe
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  // Créer un nouveau graphique et le stocker dans chartInstance
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months, // Utilisation des noms des mois
+      datasets: [{
+        label: 'Total des Absences',
+        data: totalAbsences,
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// Récupérer les données lorsque le composant est monté
+onMounted(fetchAbsences);
 </script>
 
+<template>
+    <body>
+        <div class="d-flex">
+            <Navbar class="navbar" />
+            <Utilisateur class="utilisateur" />
+            <div class="container-lg">
+
+                <!-- Formulaire de recherche -->
+               <!-- Formulaire de recherche -->
+               <form @submit.prevent="fetchAbsences" class="space-y-4 mx-4 md:mx-8 lg:mx-16">
+  <div class="flex flex-wrap items-end space-x-4">
+    <div class="flex-1">
+      <label for="nom" class="block text-sm font-medium text-gray-700">Nom de l'employé</label>
+      <input 
+        type="text" 
+        v-model="search.nom_employe" 
+        id="nom" 
+        placeholder="Entrez le nom"
+        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+      />
+    </div>
+
+    <div class="flex-1">
+      <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom de l'employé</label>
+      <input 
+        type="text" 
+        v-model="search.pre_employe" 
+        id="prenom" 
+        placeholder="Entrez le prénom"
+        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+      />
+    </div>
+
+    <div class="flex-1">
+      <label for="startDate" class="block text-sm font-medium text-gray-700">Date de début</label>
+      <input 
+        type="date" 
+        v-model="search.startDate" 
+        id="startDate"
+        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+      />
+    </div>
+
+    <div class="flex-1">
+      <label for="endDate" class="block text-sm font-medium text-gray-700">Date de fin</label>
+      <input 
+        type="date" 
+        v-model="search.endDate" 
+        id="endDate"
+        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+      />
+    </div>
+
+    <div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        Rechercher
+      </button>
+    </div>
+  </div>
+</form>
+
+
+
+                <!-- Nouvelle carte pour le total des absences -->
+                <div class="flex space-x-6 mt-6">
+  <!-- Nouvelle carte pour le total des absences -->
+  <div class="absence-card bg-white p-4 rounded-lg shadow-md w-1/3">
+    <h2 class="text-lg font-semibold mb-2">Total des Absences</h2>
+    <p class="text-3xl font-bold text-indigo-600">{{ data.totalAbsences }}</p>
+  </div>
+
+  <!-- Graphique -->
+  <div class="w-2/3">
+    <canvas ref="absenceChart" width="400" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Affichage des erreurs -->
+<div v-if="error" class="error text-red-500 mt-4">{{ error }}</div>
+
+            </div>
+        </div>
+    </body>
+</template>
+
+<style lang="scss" scoped>
+@import "../assets/style/globaly.scss";
+
+body {
+  color: #566787;
+  background-color: $text;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 15px;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.navbar {
+  height: 100vh;
+  position: fixed;
+  left: 0;
+}
+
+.container-lg {
+  margin-left: 17%;
+  width: 100%;
+  padding: 1px;
+  position: fixed;
+  margin-top: 7%;
+  margin-left: 15.5%;
+  box-shadow: 10px 10px 10px 10px #F0F0F0;
+  flex-direction: column;
+}
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-fields {
+  display: flex;
+  gap: 10px; /* Espacement entre les champs */
+  flex-wrap: wrap; /* Pour gérer le débordement si l'écran est trop petit */
+}
+
+.search-fields div {
+  display: flex;
+  flex-direction: column; /* Étiquette au-dessus de l'input */
+}
+
+.absence-card {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+</style>

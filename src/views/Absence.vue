@@ -5,20 +5,33 @@ import { ref, watch, onMounted, computed } from "vue";
 import Swal from "sweetalert2";
 import api from "../api";
 // Variables pour les champs du formulaire
-const nom = ref("");
-const password = ref("");
-const email = ref("");
-const role = ref("");
+const name = ref("");
+const duree = ref("");
+const type = ref("");
 const userees = ref([]);
 const currentPage = ref(1); // Page actuelle
 const itemsPerPage = ref(5); // Nombre d'employés par page
+const getRoleFromToken = (token) => {
+    if (!token) return null;
+    const payload = token.split('.')[1];
+    const base64Url = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64Url).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const parsedPayload = JSON.parse(jsonPayload);
+    return parsedPayload.role;
+};
+
+// Récupère le rôle de l'utilisateur à partir du token
+const userRole = computed(() => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    return getRoleFromToken(token);
+  }
+  return null;
+});
 const ajoutUser = async () => {
     if (
-        !nom.value ||
-        !email.value ||
-        !role.value ||
-        !password.value
-
+        !name.value ||
+        !type.value 
     ) {
         Swal.fire({
             icon: "error",
@@ -30,12 +43,10 @@ const ajoutUser = async () => {
     }
 
     try {
-        const response = await api.post("/utile/ajout", {
-            nom: nom.value,
-            email: email.value,
-            role: role.value,
-            password: password.value,
-
+        const response = await api.post("/absences/ajout", {
+            name: name.value,
+            duree: duree.value,
+            type:type.value
         });
 
         Swal.fire({
@@ -51,30 +62,27 @@ const ajoutUser = async () => {
         Swal.fire({
             icon: 'error',
             title: 'Erreur',
-            text: "Une erreur s'est produite lors de l'ajout de l'employé!",
+            text: "Une erreur s'est produite lors de l'ajout de type absence!",
         });
     }
 };
 const cancel = () => {
-    nom.value = "";
-    email.value = "";
-    password.value = "";
-    role.value = "";
+    name.value = "";
+    type.value = "";
+    duree.value = "";
 
 };
 const fetchUser = async () => {
     try {
-        const response = await api.get("/utile/lisitrauser");
+        const response = await api.get("/absences/lisitraabsence");
         userees.value = response.data.data;
     } catch (error) {
-        Swal.fire("Erreur", "Impossible de charger les utilisateur", "error");
+        Swal.fire("Erreur", "Impossible de charger les absences", "error");
     }
 };
-// Propriété calculée pour paginer les utilisateurs
 const paginatedUsers = computed(() => {
-    // Filtrer les utilisateurs en fonction du terme de recherche
     const filteredUsers = userees.value.filter(user => {
-        return user.nom.toLowerCase().includes(searchTerm.value.toLowerCase());
+        return user.nom_absence.toLowerCase().includes(searchTerm.value.toLowerCase());
     });
 
     // Calcul de la pagination
@@ -106,26 +114,26 @@ const edit = ref(false);
 const edition = ref(null);
 const editUser = (usere) => {
     edit.value = true;
-    edition.value = usere.id;
-    nom.value = usere.nom;
-    email.value = usere.email;
-    role.value = usere.role;
+    edition.value = usere.id_absence;
+    name.value = usere.nom_absence;
+    type.value = usere.type;
+    duree.value = usere.duree;
  
 };
 
 const updateUser = async () => {
     try {
-        await api.patch(`/utile/modifeuser/${edition.value}`, {
-            nom: nom.value,
-            email: email.value,
-            role: role.value,
+        await api.patch(`/absences/modifierabsence/${edition.value}`, {
+            nom_absence: name.value,
+            type: type.value,
+            duree: duree.value,
            
         });
 
         Swal.fire({
             icon: "success",
             title: "Succès",
-            text: "Utilisateur mis à jour avec succès",
+            text: "Absence mis à jour avec succès",
             confirmButtonText: "OK",
             confirmButtonColor: "#3085d6",
             timer: 3000,
@@ -158,11 +166,11 @@ const deleteUser = async (id) => {
         });
 
         if (result.isConfirmed) {
-            await api.delete(`/utile/deleteuser/${id}`);
+            await api.delete(`/absences/supprimer/${id}`);
 
             Swal.fire({
                 title: "Succès",
-                text: "Employé supprimé avec succès",
+                text: "Absence supprimé avec succès",
                 icon: "success",
                 confirmButtonText: "OK",
                 confirmButtonColor: "#3085d6",
@@ -175,7 +183,7 @@ const deleteUser = async (id) => {
         Swal.fire({
             icon: "error",
             title: "Erreur",
-            text: "Échec de la suppression de l'employé",
+            text: "Échec de la suppression de l'absence",
             confirmButtonText: "Réessayer",
             confirmButtonColor: "#d33",
         });
@@ -214,24 +222,15 @@ watch(searchTerm, fetchUsers);
                         <div class="table-title">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h2>A propos des Utilisateurs</h2>
+                                    <h2>A propos des Types d'Absence</h2>
                                 </div>
                                 <div class="col-sm-6">
                                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
                                         data-bs-target="#exampleModal">
-                                        <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Utilisateur</span>
+                                        <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Absence</span>
                                     </button>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <div class="flex items-center gap-2">
-                                        <label for="input2"
-                                            class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Recherche</label>
-                                        <input type="text" id="input2" v-model="searchTerm" @input="fetchUsers"
-                                            class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                                    </div>
-
-
-                                </div>
+                               
                             </div>
                         </div>
 
@@ -240,24 +239,26 @@ watch(searchTerm, fetchUsers);
                             <table class="table table-striped table-hover">
                                 <thead class="table-header">
                                     <tr>
-                                        <th>Nom</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Action</th>
+                                        <th>Nom </th>
+                                        <th>Type</th>
+                                        <th>Duree</th>
+                                        <th>Special ou Non</th>
+                                        <th v-if="userRole === 'ADMINISTRATEUR'">Action</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
                                     <tr v-for="usere in paginatedUsers" :key="usere.id">
-                                        <td>{{ usere.nom }}</td>
-                                        <td>{{ usere.email }}</td>
-                                        <td>{{ usere.role }}</td>
-                                        <td class="button">
+                                        <td>{{ usere.nom_absence }}</td>
+                                        <td>{{ usere.type }}</td>
+                                        <td>{{ usere.duree }}</td>
+                                        <td>{{ usere.pour }}</td>
+                                        <td class="button" v-if="userRole === 'ADMINISTRATEUR'">
                                             <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal"
                                                 data-bs-target="#modalupdate" @click="editUser(usere)">
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                             </button>
-                                            <button type="button" class="btn btn-danger ms-2 btn-sm btn-xs"  @click="deleteUser(usere.id)">
+                                            <button type="button" class="btn btn-danger ms-2 btn-sm btn-xs"  @click="deleteUser(usere.id_absence)">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </td>
@@ -325,9 +326,8 @@ watch(searchTerm, fetchUsers);
                         <div class="modal-body">
                             <form @submit.prevent="ajoutUser">
                                 <div class="flex flex-col sm:flex-row gap-4">
-                                    <!-- Champ "Nom" -->
                                     <div class="relative w-full">
-                                        <input type="text" v-model="nom" id="floating_outlined"
+                                        <input type="text" v-model="name" id="floating_outlined"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
                                         <label for="floating_outlined"
@@ -336,14 +336,13 @@ watch(searchTerm, fetchUsers);
                                         </label>
                                     </div>
 
-                                    <!-- Champ "Prénom" -->
                                     <div class="relative w-full">
-                                        <input type="email" v-model="email" id="floating_outlined_email"
+                                        <input type="number" v-model="duree" id="floating_outlined_email"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
                                         <label for="floating_outlined_email"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                                            Email
+                                            Duree
                                         </label>
                                     </div>
                                 </div>
@@ -351,31 +350,21 @@ watch(searchTerm, fetchUsers);
                                 <br />
 
                                 <div class="flex flex-col sm:flex-row gap-4">
-                                    <!-- Champ "Motif" -->
                                     <div class="col-span-2 sm:col-span-1 w-full">
-                                        <select id="category" v-model="role"
+                                        <select id="category" v-model="type"
                                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                                            <option value="ADMINISTRATEUR">ADMINISTRATEUR</option>
-                                            <option value="UTILISATEUR">UTILISATEUR</option>
+                                            <option value="M">Masculin</option>
+                                            <option value="F">Féminin</option>
+                                            <option value="T">PourTous</option>
                                         </select>
                                     </div>
 
-                                    <!-- Champ "Sexe" -->
-                                    <div class="relative w-full">
-                                        <input type="text" v-model="password" id="floating_outlined_motif"
-                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                            placeholder=" " />
-                                        <label for="floating_outlined_motif"
-                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                                            Password
-                                        </label>
-                                    </div>
+                                
                                 </div>
 
                                 <br />
 
 
-                                <!-- bouton ajouter employer-->
                                 <div class="modal-footer">
                                     <button type="submit" style="color: #212e53"
                                         class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
@@ -408,23 +397,23 @@ watch(searchTerm, fetchUsers);
                                 <div class="flex flex-col sm:flex-row gap-4">
                                     <!-- Champ "Nom" -->
                                     <div class="relative w-full">
-                                        <input type="text" v-model="nom" id="floating_outlined"
+                                        <input type="text" v-model="name" id="floating_outlined"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
                                         <label for="floating_outlined"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                                            Nom
+                                            Name
                                         </label>
                                     </div>
 
                                     <!-- Champ "Prénom" -->
                                     <div class="relative w-full">
-                                        <input type="email" v-model="email" id="floating_outlined_email"
+                                        <input type="number" v-model="duree" id="floating_outlined_email"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
                                         <label for="floating_outlined_email"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                                            Email
+                                            Duree
                                         </label>
                                     </div>
                                 </div>
@@ -434,10 +423,11 @@ watch(searchTerm, fetchUsers);
                                 <div class="flex flex-col sm:flex-row gap-4">
                                     <!-- Champ "Motif" -->
                                     <div class="col-span-2 sm:col-span-1 w-full">
-                                        <select id="category" v-model="role"
+                                        <select id="category" v-model="type"
                                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                                            <option value="ADMINISTRATEUR">ADMINISTRATEUR</option>
-                                            <option value="UTILISATEUR">UTILISATEUR</option>
+                                            <option value="M">Masculin</option>
+                                            <option value="F">Féminin</option>
+                                            <option value="T">PourTous</option>
                                         </select>
                                     </div>
 

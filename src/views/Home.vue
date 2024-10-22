@@ -1,13 +1,14 @@
 <script setup>
 import { computed } from 'vue';
 import { ref } from 'vue';
-import axios from 'axios';
+import api from "@/api";
+import Swal from 'sweetalert2';
 import { useRouter } from 'vue-router';
 const currentDate = ref(new Date().toISOString().split('T')[0]);
 const currentTime = ref(new Date().toLocaleTimeString());
 // Déclaration des variables
 const email = ref('');
-const mdp = ref('');
+const password = ref('');
 const error = ref(null);
 const router = useRouter();
 
@@ -29,25 +30,49 @@ const togglePasswordVisibility = () => {
 const login = async () => {
     error.value = null; // Réinitialiser l'erreur
     try {
-        const response = await axios.post('http://localhost:3000/utile/login', {
+        const response = await api.post('/utile/login', {
             email: email.value,
-            mdp: mdp.value,
+            password: password.value,
         });
 
         // Stocker le token dans le localStorage
         localStorage.setItem('access_token', response.data.access_token);
-
+// Afficher une alerte de succès avec le modèle SweetAlert
+Swal.fire({
+            position: 'center',
+            icon: 'success',
+            title: 'Connexion réussie',
+            showConfirmButton: false,
+            timer: 1000,
+        });
         // Redirection après la connexion réussie
-        router.push('/accueil'); // Exemples de redirection
+      // Redirection après la connexion réussie
+      setTimeout(() => {
+            router.push('/accueil'); // Exemple de redirection
+        }, 1500); // Rediriger après que l'alerte disparaisse
     } catch (err) {
+        // Gérer les erreurs et afficher un message d'erreur avec SweetAlert
         if (err.response) {
             // Afficher le message d'erreur renvoyé par le serveur
-            error.value = err.response.data.message;
+            Swal.fire({
+                position: 'center',
+                icon: 'error',
+                title: err.response.data.message, // Message renvoyé par le backend
+                showConfirmButton: false,
+                timer: 1500,
+            });
         } else {
-            error.value = 'Erreur de connexion';
+            // Message d'erreur générique si aucune réponse du serveur
+            Swal.fire({
+                title: 'Erreur',
+                text: 'Erreur de connexion',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
         }
     }
 };
+
 
 </script>
 <template>
@@ -65,7 +90,7 @@ const login = async () => {
         <br>
         <div class="content">
             <div class="image">
-                <img src="../assets/sary/login.avif" alt="">
+                <img src="../assets/photos/login.avif" alt="">
             </div>
             <div class="container">
                 <div class="form_container">
@@ -80,13 +105,12 @@ const login = async () => {
                         <div class="password">
                             <label for="password">Mot de passe</label>
                             <br>
-                            <div class="mdp-input">
-                                <input :type="passwordFieldType" v-model="mdp" name="password">
+                            <div class="password-input">
+                                <input :type="passwordFieldType" v-model="password" name="password">
                                 <i :class="['fas', iconClass, 'toggle-password']" @click="togglePasswordVisibility"></i>
                             </div>
                             <br>
                         </div>
-                        <br>
                         <div class="button">
                             <button type="submit"> Entrer </button>
                         </div>
@@ -132,7 +156,7 @@ button {
     align-self: center;
     letter-spacing: 2px;
     cursor: pointer;
-    top: -10px;
+   
 }
 
 /*Emplacement de la date et heure*/
@@ -198,6 +222,7 @@ button {
     justify-content: center;
     line-height: 50px;
     margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .form_container {
@@ -233,7 +258,7 @@ button {
 }
 
 /* Icone de démasquage de mot de passe */
-.mdp-input i {
+.password-input i {
     position: absolute;
     margin-left: -35px;
     cursor: pointer;

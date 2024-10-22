@@ -1,25 +1,71 @@
 <template>
   <div class="top-navbar">
     <div class="left-section">
-      <span class="user-id">Email:{{ email }}</span>
+      <span class="user-id">{{ email }}</span>
     </div>
     <div class="right-section">
-      <a href="#" class="visit-website">{{ nom }}</a>
       <div class="user-profile">
         <i class="bi bi-person"></i>
         <span class="user-name">{{ role }}</span>
+      </div>
+      <div class="logout-section" @click="confirmLogout">
+        <i class="fs-5 bi bi-power logout-icon"></i>
       </div>
     </div>
   </div>
 </template>
 <script setup>
+const router = useRouter();
+import Swal from "sweetalert2";
+
 
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+
 
 const nom = ref('');
 const role = ref('');
 const email= ref('')
 
+const logout = () => {
+  localStorage.removeItem('access_token');
+  router.replace({ name: 'home' }); 
+  window.location.reload();
+};
+
+const confirmLogout = () => {
+  Swal.fire({
+    title: 'Voulez-vous vraiment vous déconnecter ?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Oui, déconnectez-moi',
+    cancelButtonText: 'Annuler',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      logout(); 
+    }
+  });
+};
+
+
+onMounted(() => {
+  // Suppression du cache
+  if ('caches' in window) {
+    caches.keys().then((cacheNames) => {
+      cacheNames.forEach((cacheName) => {
+        caches.delete(cacheName);
+      });
+    });
+  }
+
+  // Bloquer le bouton "Retour"
+  window.history.pushState(null, '', window.location.href);
+  window.onpopstate = function () {
+    window.history.pushState(null, '', window.location.href);
+  };
+});
 const decode = (str) => {
   const base = str.replace(/-/g, '+').replace(/_/g, '/');
   const jsonpayload = decodeURIComponent(
@@ -67,28 +113,34 @@ onMounted(() => {
 }
 
 .left-section .user-id {
-  color: #999;
+  color: $primary;
   font-size: 14px;
-  vertical-align: middle; /* Assure que le texte est centré verticalement */
+  vertical-align: middle;
+  font-weight: bold; /* Assure que le texte est centré verticalement */
 }
 
 .right-section {
   display: flex;
   align-items: center;
   margin-left: auto;
+  gap: 40px; /* Ajoute un espace de 20px entre les éléments de la section */
+
 }
 
+
 .visit-website {
-  color: #999;
+  color: $primary;
   margin-right: 20px;
   font-size: 14px;
   text-decoration: none;
+  font-weight: bold;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  color: #999;
+  color:$primary;
+  font-weight: bold;
 }
 
 .user-profile i {
@@ -98,5 +150,12 @@ onMounted(() => {
 
 .user-profile .user-name {
   font-size: 14px;
+}
+
+.logout-icon {
+  color:$accent; 
+  transform: scale(1.1); /* Agrandit légèrement l'icône au survol */
+  background-color: $primary;
+  border-radius: 50%;
 }
 </style>
