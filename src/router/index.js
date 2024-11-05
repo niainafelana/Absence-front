@@ -12,6 +12,9 @@ import Departement from "@/views/Departement.vue";
 import User from "@/views/User.vue";
 import Absence from "@/views/Absence.vue";
 import Poste from "@/views/Poste.vue";
+import Code from "@/views/Code.vue";
+import Réinitialisation from "@/views/Réinitialisation.vue";
+import Profil from "@/views/Profil.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,15 +32,33 @@ const router = createRouter({
       meta: { requiresAuth: true, /*role: ["ADMINISTRATEUR"]*/ }, 
     },
     {
+      path:"/code",
+      name:"code",
+      component: Code,
+
+    },
+    {
+      path:"/profil",
+      name:"profile",
+      component:Profil,
+    },
+    {
+      path:"/reinitialisation",
+      name:"reinitialisation",
+      component:Réinitialisation,
+
+    },
+    {
       path: "/exemple",
       name: "exemple",
       component: Exemple,
       meta: { requiresAuth: true },
     },
     {
-      path: "/",
+      path: "/home",
       name: "home",
       component: Home,
+
     },
     {
       path: "/utilisateur",
@@ -103,41 +124,40 @@ const router = createRouter({
 const getRoleFromToken = (token) => {
   if (!token) return null;
 
-  const payload = token.split(".")[1]; // Récupère la partie payload
-  const base64Url = payload.replace(/-/g, "+").replace(/_/g, "/"); // Normalise le payload
+  const payload = token.split(".")[1]; 
+  const base64Url = payload.replace(/-/g, "+").replace(/_/g, "/"); 
   const jsonPayload = decodeURIComponent(
     atob(base64Url)
       .split("")
       .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
       .join("")
-  ); // Décodage
-  const parsedPayload = JSON.parse(jsonPayload); // Parse le JSON
+  ); 
+  const parsedPayload = JSON.parse(jsonPayload); 
 
-  return parsedPayload.role; // Récupère le rôle
+  return parsedPayload.role; 
 };
 
 // Guard de navigation
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("access_token"); // Vérifie si l'utilisateur a un token
+  const token = localStorage.getItem("access_token"); 
 
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    // Si la route nécessite une authentification
     if (!token) {
-      localStorage.removeItem("access_token"); // Supprime le token si non valide
-      next({ name: "home", replace: true }); // Redirige vers login sans possibilité de retour
+      localStorage.removeItem("access_token"); 
+      next({ name: "home", replace: true }); 
     } else {
-      const userRole = getRoleFromToken(token); // Récupère le rôle à partir du token
+      const userRole = getRoleFromToken(token); 
 
       if (to.meta.role && !to.meta.role.includes(userRole)) {
-        // Si l'utilisateur n'a pas le bon rôle
-        localStorage.removeItem("access_token"); // Supprime le token si le rôle est incorrect
-        next({ name: "home", replace: true }); // Redirige vers login sans possibilité de retour
+       
+        localStorage.removeItem("access_token"); 
+        next({ name: "home", replace: true }); 
       } else {
-        next(); // Permet la navigation si tout est correct
+        next(); 
       }
     }
   } else {
-    next(); // Permet la navigation pour les routes publiques
+    next(); 
   }
 });
 

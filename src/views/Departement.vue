@@ -7,7 +7,7 @@ import api from "../api";
 // Variables pour les champs du formulaire
 const code_departement = ref("");
 const description = ref("");
-const fonction = ref("");
+const localisation= ref("");
 const nom_departement= ref("");
 const userees = ref([]);
 const currentPage = ref(1); // Page actuelle
@@ -15,7 +15,7 @@ const itemsPerPage = ref(5); // Nombre d'employés par page
 const ajoutUser = async () => {
     if (
         !code_departement.value ||
-        !fonction.value ||
+        !localisation.value ||
         !nom_departement.value ||
         !description.value
     ) {
@@ -27,21 +27,22 @@ const ajoutUser = async () => {
         });
         return;
     }
-
+    
     try {
         const response = await api.post("/departement/ajoutdepart", {
             code_departement: code_departement.value,
             description: description.value,
-            fonction:fonction.value,
+            localisation:localisation.value,
             nom_departement:nom_departement.value
         });
-
+        
         Swal.fire({
             icon: "success",
             title: "Succès",
             text: response.data.message,
             confirmButtonColor: "#212E53",
         });
+       
         cancel();
         fetchUser();
 
@@ -55,7 +56,7 @@ const ajoutUser = async () => {
 };
 const cancel = () => {
     code_departement.value = "";
-    fonction.value = "";
+    localisation.value = "";
     description.value = "";
     nom_departement.value="";
 
@@ -64,14 +65,15 @@ const fetchUser = async () => {
     try {
         const response = await api.get("/departement/recuperation");
         userees.value = response.data.data;
+        
     } catch (error) {
         Swal.fire("Erreur", "Impossible de charger les departements", "error");
     }
 };
 const paginatedUsers = computed(() => {
     const filteredUsers = userees.value.filter(user => {
-        return user.nom_departement.toLowerCase().includes(searchTerm.value.toLowerCase());
-    });
+        return user.nom_departement.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        user.code_departement.toLowerCase().includes(searchTerm.value.toLowerCase());    });
 
     // Calcul de la pagination
     const start = (currentPage.value - 1) * itemsPerPage.value;
@@ -104,7 +106,7 @@ const editUser = (usere) => {
     edit.value = true;
     edition.value = usere.id;
     code_departement.value = usere.code_departement;
-    fonction.value = usere.fonction;
+    localisation.value = usere.localisation;
     description.value = usere.description;
     nom_departement.value= usere.nom_departement;
 
@@ -117,7 +119,7 @@ const updateUser = async () => {
             code_departement: code_departement.value,
             nom_departement:nom_departement.value,
             description: description.value,
-            fonction:fonction.value,
+            localisation:localisation.value,
 
            
         });
@@ -162,7 +164,7 @@ const deleteUser = async (id) => {
 
             Swal.fire({
                 title: "Succès",
-                text: "Employé supprimé avec succès",
+                text: "Département supprimé avec succès",
                 icon: "success",
                 confirmButtonText: "OK",
                 confirmButtonColor: "#3085d6",
@@ -186,15 +188,12 @@ const searchTerm = ref('');
 // Fonction pour récupérer les utilisateurs
 const fetchUsers = async () => {
     try {
-        console.log('Recherche d\'utilisateurs pour le terme:', searchTerm.value); // Log pour le terme de recherche
-        const response = await api.get('/utile/utilisateurs', {
+        const response = await api.get('/departement/searchdepartement', {
             params: {
                 nom: searchTerm.value,
             },
         });
-        paginatedUsers.value = response.data.data; // Met à jour les utilisateurs affichés
-        console.log('Réponse de l\'API:', response.data); // Log de la réponse
-
+        paginatedUsers.value = response.data.data; 
     } catch (error) {
         console.error('Erreur lors de la récupération des utilisateurs:', error);
     }
@@ -214,12 +213,12 @@ watch(searchTerm, fetchUsers);
                         <div class="table-title">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h2>A propos des Utilisateurs</h2>
+                                    <h2>A propos Département</h2>
                                 </div>
                                 <div class="col-sm-6">
                                     <button fonction="button" class="btn btn-success" data-bs-toggle="modal"
                                         data-bs-target="#exampleModal">
-                                        <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Utilisateur</span>
+                                        <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Département</span>
                                     </button>
                                 </div>
                                 <div class="d-flex gap-2">
@@ -242,7 +241,7 @@ watch(searchTerm, fetchUsers);
                                     <tr>
                                         <th>Code</th>
                                         <th>Nom </th>
-                                        <th>Fonction</th>
+                                        <th>localisation</th>
                                         <th>Description</th>
                                         <th>Action</th>
                                     </tr>
@@ -252,7 +251,7 @@ watch(searchTerm, fetchUsers);
                                     <tr v-for="usere in paginatedUsers" :key="usere.id">
                                         <td>{{ usere.code_departement }}</td>
                                         <td>{{ usere.nom_departement }}</td>
-                                        <td>{{ usere.fonction }}</td>
+                                        <td>{{ usere.localisation }}</td>
                                         <td>{{ usere.description }}</td>
                                         <td class="button">
                                             <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal"
@@ -320,7 +319,7 @@ watch(searchTerm, fetchUsers);
                   font-weight: bold;
                   text-align: center;
                 ">
-                                Créer Nouvelle utilisateur
+                                Créer Nouvelle Département
                             </h5>
                             <button fonction="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -361,12 +360,12 @@ watch(searchTerm, fetchUsers);
                                         </label>
                                     </div>
                                     <div class="relative w-full">
-                                        <input type="text" v-model="fonction" id="floating_outlined_fonction"
+                                        <input type="text" v-model="localisation" id="floating_outlined_fonction"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
                                         <label for="floating_outlined_fonction"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                                            Fonction
+                                            Localisation
                                         </label>
                                     </div>
                                 </div>
@@ -397,7 +396,7 @@ watch(searchTerm, fetchUsers);
                   font-weight: bold;
                   text-align: center;
                 ">
-                                Modification de l'utilisateur
+                                Modification du département
                             </h5>
                             <button fonction="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -440,7 +439,7 @@ watch(searchTerm, fetchUsers);
                                         </label>
                                     </div>
                                     <div class="relative w-full">
-                                        <input fonction="number" v-model="fonction" id="floating_outlined_email"
+                                        <input fonction="number" v-model="localisation" id="floating_outlined_email"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
                                         <label for="floating_outlined_email"

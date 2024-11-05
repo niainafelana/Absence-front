@@ -1,71 +1,39 @@
 <template>
-
-  <body class="body">
-    <div class="container-fluid">
-      <div class="row flex-nowrap">
-        <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 ">
-          <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100">
-            <a href="" class="d-flex align-items-center text-white text-decoration-none" id="dropdownUser1"
-              data-bs-toggle="dropdown" aria-expanded="false">
-              <span class="fs-6 d-none d-sm-inline">MiezakaAbsence</span> </a>
-
-            <!--Navbar-->
-            <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
-              <li class="nav-item">
-                <RouterLink to="/accueil" class="nav-link align-middle px-0"> <i class="fs-5 bi bi-house-fill"></i>
-                  <span class="ms-1 d-none d-sm-inline">Accueil</span>
-                </RouterLink>
-              </li>
-              <li class="nav-item" >
-                <RouterLink to="/employe" class="nav-link align-middle px-0">
-                  <i class="fs-5 bi bi-file-earmark-person"></i> <span class="ms-1 d-none d-sm-inline">Employe</span>
-                </RouterLink>
-              </li>
-              <li class="nav-item">
-                <RouterLink to="/demande" class="nav-link align-middle px-0">
-                  <i class="fs-6 bi bi-calendar3"></i> <span class="ms-1 d-none d-sm-inline">Demande</span>
-                </RouterLink>
-              </li>
-              <li class="nav-item">
-                <RouterLink to="/user" class="nav-link align-middle px-0">
-                  <i class="fs-6 bi bi-people-fill"></i> <span class="ms-1 d-none d-sm-inline">Utilisateur</span>
-                </RouterLink>
-              </li>
-              <li class="nav-item">
-                <RouterLink to="/type" class="nav-link align-middle px-0">
-                  <i class="fs-6 bi bi-calendar3"></i> <span class="ms-1 d-none d-sm-inline">TypeAbsence</span>
-                </RouterLink>
-              </li>
-              <li class="nav-item">
-                <RouterLink to="/poste" class="nav-link align-middle px-0">
-                  <i class="fs-6 bi bi-calendar3"></i> <span class="ms-1 d-none d-sm-inline">Poste</span>
-                </RouterLink>
-              </li>
-
-              <li class="nav-item">
-                <RouterLink to="/departement" class="nav-link align-middle px-0">
-                  <i class="fs-6 bi bi-calendar3"></i> <span class="ms-1 d-none d-sm-inline">Departement</span>
-                </RouterLink>
-              </li>
-            </ul>
-            <hr>
-
-          </div>
-        </div>
-      </div>
+  <nav class="vertical-navbar">
+    <div class="logo">
+      <h2>MiezakaAbsence</h2>
     </div>
-  </body>
+    <ul class="nav-menu">
+      <li v-for="item in navItems" :key="item.path" :class="{ active: isActive(item.path) }">
+        <RouterLink :to="item.path">
+          <i :class="item.icon"></i>
+          <span>{{ item.name }}</span>
+        </RouterLink>
+      </li>
+    </ul>
+  </nav>
 </template>
 
 <script setup>
-import { RouterLink, useRoute } from 'vue-router';
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
+
 const route = useRoute();
 
-// Fonction pour vérifier si le lien est actif
 const isActive = (path) => {
   return route.path === path;
 };
+
+const navItems = [
+  { name: 'Accueil', path: '/accueil', icon: 'bi bi-house-fill' },
+  { name: 'Employe', path: '/employe', icon: 'bi bi-person-fill' },
+  { name: 'Demande', path: '/demande', icon: 'bi bi-calendar-fill' },
+  { name: 'Utilisateur', path: '/user', icon: 'bi bi-people-fill' },
+  { name: 'TypeAbsence', path: '/type', icon: 'bi bi-tag-fill' },
+  { name: 'Departement', path: '/departement', icon: 'bi bi-diagram-3-fill' },
+
+  { name: 'Poste', path: '/poste', icon: 'bi bi-briefcase-fill' },
+];
 
 const getRoleFromToken = (token) => {
   if (!token) return null;
@@ -76,7 +44,6 @@ const getRoleFromToken = (token) => {
   return parsedPayload.role;
 };
 
-// Récupère le rôle de l'utilisateur à partir du token
 const userRole = computed(() => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -89,69 +56,101 @@ const userRole = computed(() => {
 <style lang="scss" scoped>
 @import "../assets/style/globaly.scss";
 
-.body {
+.vertical-navbar {
+  width: 200px;
+  height: 100vh;
   background-color: $accent;
+  padding: 20px 0;
   position: fixed;
+  left: 0;
+  top: 0;
 }
 
-li.dropdown {
-  display: inline-block;
+.logo {
+  text-align: center;
+  padding: 0 20px;
+  margin-top: -100%;
+  h2 {
+    color: $primary;
+    font-size: 18px;
+    font-weight: bold;
+    
+  }
 }
 
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: $accent;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-  z-index: 1;
+.nav-menu {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+
+  li:first-child {
+    margin-top: -200%; // Élimine la marge supérieure du premier élément de la liste
+  }
+  li {
+    padding: 0 16px;
+    margin-bottom: 8px;
+
+    a {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      color: $primary;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+
+      i {
+        font-size: 18px;
+        margin-right: 10px;
+      }
+
+      span {
+        font-size: 14px;
+      }
+    }
+
+    &:hover, &.active {
+      a {
+        background-color: rgba($primary, 0.2);
+        color: lighten($primary, 20%);
+        border-radius: 20px;
+
+      }
+    }
+
+    &.active {
+      a {
+        background-color: rgba($primary, 0.2);
+        font-weight: bold;
+        border-radius: 20px;
+      }
+    }
+  }
 }
 
-.dropdown-content a {
-  color: black;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-  text-align: left;
+@media (max-width: 768px) {
+  .vertical-navbar {
+    width: 60px;
+  }
+
+  .logo h2 {
+    display: none;
+  }
+
+  .nav-menu li {
+    a {
+      justify-content: center;
+      padding: 10px;
+
+      span {
+        display: none;
+      }
+
+      i {
+        margin-right: 0;
+      }
+    }
+  }
 }
 
-.dropdown-content a:hover {
-  background-color: #f1f1f1;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-a {
-  background-color: $accent;
-  margin-bottom: 12%;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-}
-
-li i {
-  color: $primary;
-  font-weight: bold;
-  font-size: 10px;
-}
-
-span {
-  color: $primary;
-  font-weight: bold;
-  display: flex;
-  font-size: 15px;
-}
-
-.nav-item:first-child {
-  margin-top: 20px;
-}
-
-.nav-link:hover,
-.nav-link.active {
-  text-decoration: underline !important;
-}
 </style>

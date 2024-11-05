@@ -529,11 +529,11 @@ function imprimerDemande(demande) {
       <!-- Contenu à imprimer -->
       <div class="page">
         <!-- Première partie (Originale) -->
-        <div class="content">
+       <div class="content">
           <header class="flex justify-between items-start border-b pb-4">
             <div class="flex items-center space-x-4">
               <div class="w-20">
-          <img id="logo" src="${getAbsoluteImagePath()}"  /></div>
+              </div>
               <div>
                 <h2 class="text-lg font-bold uppercase">Société Miezaka EURL</h2>
                 <p>Téléphone : 75 516 55</p>
@@ -582,7 +582,6 @@ function imprimerDemande(demande) {
           <header class="flex justify-between items-start border-b pb-4">
             <div class="flex items-center space-x-4">
               <div class="w-20">
-                   <img id="logo" src="${getAbsoluteImagePath()}"  />
               </div>
               <div>
                 <h2 class="text-lg font-bold uppercase">Société Miezaka EURL</h2>
@@ -725,48 +724,54 @@ const downloadFile = async (demandeId) => {
               <table class="table table-striped table-hover" ref="dataTable">
                 <thead class="table-header">
                   <tr>
-                    <th>Nom et Prénom</th>
                     <th>N°Matricule</th>
+                    <th>Nom et Prénom</th>
                     <th>Fonction</th>
                     <th>Nombre de jours</th>
-                    <th>Congé restant</th>
+                    <th>Solde restant</th>
                     <th>Date de départ</th>
                     <th>Date retour</th>
                     <th>Motif</th>
-                    <th>telecharger</th>
                     <th>Action</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   <tr v-for="demandee in paginatedAbsences" :key="demandee.id">
+                    <td>{{ demandee.personnel.matricule }}</td>
                     <td> {{ demandee.personnel.nom_employe }} <br>
                       {{demandee.personnel.pre_employe}}</td>
-                    <td>{{ demandee.personnel.matricule }}</td>
                     <td>{{ demandee.personnel.poste }}</td>
-                    <td>{{ demandee.jours_absence }}</td>
-                    <td>{{ demandee.solde_employe }}</td>
+                    <td>{{ demandee.jours_absence + ' jours'  }}</td>
+                    <td>{{ demandee.solde_employe + ' jours'  }}</td>
                     <td>{{ formatDate(demandee.date_debut) }}</td>
                     <td>{{ formatDate(demandee.date_fin) }}</td>
                     <td>{{ demandee.motif }}</td>
-                    <td class="actione">
-                      <button class="btn btn-secondary btn-sm btn-xs" data-bs-toggle="modal"
-                        @click="downloadFile(demandee.id_demande)">
-                        <i class="fs-6 fa-solid fa-circle-down"></i>                             </button>
-                    </td>
-                    <td class="action-buttons">
-                      <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal" data-bs-target="#modalupdate"
-                        @click="editEmploye(demandee)">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                      </button>
-                      <button type="button" class="btn btn-info btn-sm btn-xs" @click.stop="imprimerDemande(demandee)">
-                        <i class="fa-solid fa-print"></i>
-                      </button>
-                      <button type="button" class="btn btn-danger btn-sm btn-xs"
-                        @click="deleteDemande(demandee.id_demande)">
-                        <i class="fa-solid fa-trash-can"></i>
-                      </button>
-                    </td>
+               
+                    <td class="action-buttons ps-4"> <!-- Ajustez 'ps-2' ou 'ps-3' selon le besoin -->  <!-- Les deux premiers boutons alignés en haut -->
+  <div class="d-flex gap-1">
+    <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal" data-bs-target="#modalupdate" @click="editEmploye(demandee)">
+      <i class="fa-solid fa-pen-to-square"></i>
+    </button>
+    <button type="button" class="btn btn-info btn-sm btn-xs" @click.stop="imprimerDemande(demandee)">
+      <i class="fa-solid fa-print"></i>
+    </button>
+  </div>
+  
+  <!-- Espace pour séparer les boutons du haut et du bas -->
+  <div class="my-1"></div>
+  
+  <!-- Les deux derniers boutons alignés en bas -->
+  <div class="d-flex gap-1">
+    <button type="button" class="btn btn-danger btn-sm btn-xs" @click="deleteDemande(demandee.id_demande)">
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
+    <button class="btn btn-secondary btn-sm btn-xs" @click="downloadFile(demandee.id_demande)">
+      <i class="fs-6 fa-solid fa-circle-down"></i>
+    </button>
+  </div>
+</td>
+
                   </tr>
                 </tbody>
               </table>
@@ -829,7 +834,7 @@ const downloadFile = async (demandeId) => {
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <form @submit.prevent="submitForm">
+              <form @submit.prevent="submitForm" autocomplete="false">
                 <div class="flex flex-col sm:flex-row gap-4">
                   <!-- Champ "NomEmploye" -->
                   <div class="relative w-full">
@@ -877,14 +882,19 @@ const downloadFile = async (demandeId) => {
                     </label>
                   </div>
 
-                  <!-- Champ aprem ou matin -->
-                  <div class="col-span-2 sm:col-span-1 w-full">
-                    <select id="category" v-model="formData.duredebut"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                      <option value="matin">Matin</option>
-                      <option value="apresmidi">Après-midi</option>
-                    </select>
-                  </div>
+
+                  <div class="relative w-full">
+                                        <label for="category"
+                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
+                                            Demi_journée
+                                        </label>
+                                        <select id="category" v-model="formData.duredebut"
+                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer">
+                                            <option value="matin">Matin</option>
+                                            <option value="apresmidi">Après-midi</option>
+                                        </select>
+                                    </div>
+                  
                 </div>
 
                 <br />
@@ -909,7 +919,7 @@ const downloadFile = async (demandeId) => {
                       d'absence</label>
                   </div>
                 </div>
-
+<br>
                 <!-- bouton ajouter employer-->
                 <div class="modal-footer">
                   <button type="submit" style="color: #212e53"
@@ -948,7 +958,8 @@ const downloadFile = async (demandeId) => {
                     class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                     placeholder=" " />
                   <label for="floating_outlined"
-                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Nom</label>
+                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
+                    Date début</label>
                 </div>
 
                 <!-- Champ "Prénom" -->
@@ -958,7 +969,7 @@ const downloadFile = async (demandeId) => {
                     placeholder=" " />
                   <label for="floating_outlined_prenom"
                     class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                    Prenom
+                    Date fin
                   </label>
                 </div>
               </div>
@@ -970,7 +981,7 @@ const downloadFile = async (demandeId) => {
                     class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                     placeholder=" " />
                   <label for="floating_outlined_deprtement"
-                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Departement</label>
+                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Motif</label>
                 </div>
                 <!-- champ sexe employe-->
                 <div class="relative w-full">
@@ -978,7 +989,7 @@ const downloadFile = async (demandeId) => {
                     class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                     placeholder=" " />
                   <label for="floating_outlined_motif"
-                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Fonction</label>
+                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Fichier</label>
                 </div>
               </div>
 
@@ -1024,7 +1035,7 @@ body {
   padding: 1px;
   position: fixed;
   margin-top: 7%;
-  margin-left: 14.5%;
+  margin-left: 15.5%;
   box-shadow: 10px 10px 10px 10px#F0F0F0;
   flex-direction: column;
 }

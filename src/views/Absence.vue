@@ -58,11 +58,15 @@ const ajoutUser = async () => {
         cancel();
         fetchUser();
 
-    } catch (error) {
+    }catch (error) {
+        // Vérifiez si l'erreur a un message
+        const errorMessage = error.response?.data?.message || "Une erreur s'est produite lors de l'ajout de type absence!";
+        
         Swal.fire({
             icon: 'error',
             title: 'Erreur',
-            text: "Une erreur s'est produite lors de l'ajout de type absence!",
+            text: errorMessage,
+            confirmButtonColor: "#212E53",
         });
     }
 };
@@ -222,7 +226,7 @@ watch(searchTerm, fetchUsers);
                         <div class="table-title">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h2>A propos des Types d'Absence</h2>
+                                    <h2>Liste Type d'Absence</h2>
                                 </div>
                                 <div class="col-sm-6">
                                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -252,7 +256,7 @@ watch(searchTerm, fetchUsers);
                                         <td>{{ usere.nom_absence }}</td>
                                         <td>{{ usere.type }}</td>
                                         <td>{{ usere.duree }}</td>
-                                        <td>{{ usere.pour }}</td>
+                                        <td>{{ usere.pour ? 1 : 0 }}</td>
                                         <td class="button" v-if="userRole === 'ADMINISTRATEUR'">
                                             <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal"
                                                 data-bs-target="#modalupdate" @click="editUser(usere)">
@@ -319,7 +323,7 @@ watch(searchTerm, fetchUsers);
                   font-weight: bold;
                   text-align: center;
                 ">
-                                Créer Nouvelle utilisateur
+                                Créer Nouvelle Absence
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -388,7 +392,7 @@ watch(searchTerm, fetchUsers);
                   font-weight: bold;
                   text-align: center;
                 ">
-                                Modification de l'utilisateur
+                                Modification de type Absence
                             </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>

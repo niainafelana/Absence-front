@@ -7,6 +7,7 @@ import Swal from "sweetalert2";
 import api from "../api";
 const nom = ref("");
 const prenom = ref("");
+const solde_employe = ref("");
 const sexe = ref("");
 const motif = ref("");
 const plafonnement = ref(null);
@@ -27,20 +28,25 @@ const absenceStats = ref({
 });
 const getRoleFromToken = (token) => {
     if (!token) return null;
-    const payload = token.split('.')[1];
-    const base64Url = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64Url).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const payload = token.split(".")[1];
+    const base64Url = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+        atob(base64Url)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+    );
     const parsedPayload = JSON.parse(jsonPayload);
     return parsedPayload.role;
 };
 
 // Récupère le rôle de l'utilisateur à partir du token
 const userRole = computed(() => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    return getRoleFromToken(token);
-  }
-  return null;
+    const token = localStorage.getItem("access_token");
+    if (token) {
+        return getRoleFromToken(token);
+    }
+    return null;
 });
 const creationEmploye = async () => {
     if (
@@ -114,9 +120,12 @@ const paginatedEmployes = computed(() => {
     }
 
     // Filtrer les utilisateurs en fonction du terme de recherche
-    const filteredUsers = employees.value.filter(employe => {
-        return employe.matricule.toString().includes(searchTerm.value) || // Assurez-vous d'inclure le matricule
-            employe.nom_employe.toLowerCase().includes(searchTerm.value.toLowerCase());
+    const filteredUsers = employees.value.filter((employe) => {
+        return (
+            employe.matricule.toString().includes(searchTerm.value) || // Vérifie le matricule
+            employe.nom_employe.toLowerCase().includes(searchTerm.value.toLowerCase()) || // Vérifie le nom
+            employe.pre_employe.toLowerCase().includes(searchTerm.value.toLowerCase())
+        ); // Vérifie le prénom
     });
 
     // Calcul de la pagination
@@ -124,26 +133,26 @@ const paginatedEmployes = computed(() => {
     return filteredUsers.slice(start, start + itemsPerPage.value);
 });
 
-const searchTerm = ref('');
+const searchTerm = ref("");
 
 // Fonction pour récupérer les utilisateurs
 const fetchUsers = async () => {
     try {
-        console.log('Recherche d\'utilisateurs pour le terme:', searchTerm.value); // Log pour le terme de recherche
-        const response = await api.get('/employes/mitady', {
+        console.log("Recherche d'utilisateurs pour le terme:", searchTerm.value); // Log pour le terme de recherche
+        const response = await api.get("/employes/mitady", {
             params: {
                 matricule: searchTerm.value,
+                nom_employe: searchTerm.value,
+                pre_employe: searchTerm.value,
             },
         });
         paginatedEmployes.value = response.data.data; // Met à jour les utilisateurs affichés
-        console.log('Réponse de l\'API:', response.data); // Log de la réponse
-
+        console.log("Réponse de l'API:", response.data); // Log de la réponse
     } catch (error) {
-        console.error('Erreur lors de la récupération des utilisateurs:', error);
+        console.error("Erreur lors de la récupération des utilisateurs:", error);
     }
 };
 watch(searchTerm, fetchUsers);
-
 
 const totalPages = computed(() => {
     return Math.ceil(employees.value.length / itemsPerPage.value);
@@ -169,7 +178,8 @@ onMounted(() => {
 const edit = ref(false);
 const edition = ref(null);
 const editEmploye = (employee, event) => {
-    event.stopPropagation();    edit.value = true;
+    event.stopPropagation();
+    edit.value = true;
     edition.value = employee.id_employe;
     nom.value = employee.nom_employe;
     prenom.value = employee.pre_employe;
@@ -179,6 +189,7 @@ const editEmploye = (employee, event) => {
     departement.value = employee.departement;
     plafonnement.value = employee.plafonnement;
     plafonnementbolean.value = employee.plafonnementbolean;
+    solde_employe.value = employee.solde_employe;
 };
 
 /*Modification de l'employe*/
@@ -193,6 +204,7 @@ const updateEmploye = async () => {
             plafonnementbolean: plafonnementbolean.value,
             matricule: matricule.value,
             departement: departement.value,
+            solde_employe: solde_employe.value,
         });
 
         Swal.fire({
@@ -277,13 +289,12 @@ onMounted(() => {
 const departements = ref([]);
 const postes = ref([]);
 
-
 const fetchDepartements = async () => {
     try {
-        const response = await api.get('/departement/nomdepartement');
+        const response = await api.get("/departement/nomdepartement");
         departements.value = response.data;
     } catch (error) {
-        console.error('Erreur lors de la récupération des départements:', error);
+        console.error("Erreur lors de la récupération des départements:", error);
     }
 };
 
@@ -293,7 +304,7 @@ const fetchPostes = async () => {
             const response = await api.get(`/poste/pote/${departement.value}`);
             postes.value = response.data;
         } catch (error) {
-            console.error('Erreur lors de la récupération des postes:', error);
+            console.error("Erreur lors de la récupération des postes:", error);
         }
     }
 };
@@ -362,15 +373,25 @@ const onModalClose = () => {
 // Fonction pour formater la date au format JJ-MM-AAAA
 const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    return date.toLocaleDateString('fr-FR', options);
+    const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+    return date.toLocaleDateString("fr-FR", options);
 };
 
 // Fonction pour obtenir le nom du mois
 const getMonthName = (monthNumber) => {
     const monthNames = [
-        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+        "Janvier",
+        "Février",
+        "Mars",
+        "Avril",
+        "Mai",
+        "Juin",
+        "Juillet",
+        "Août",
+        "Septembre",
+        "Octobre",
+        "Novembre",
+        "Décembre",
     ];
     return monthNames[monthNumber];
 };
@@ -386,32 +407,46 @@ const renderCharts = () => {
 
     // Gestion des différents filtres
     switch (filterType.value) {
-        case 'jour':
-            labelsBar = absenceStats.value.absencesByFilter.map(item => formatDate(item.date));
-            dataBar = absenceStats.value.absencesByFilter.map(item => item.total_absences);
-            totalDureeData = absenceStats.value.absencesByFilter.map(item => item.total_duree || 0);
+        case "jour":
+            labelsBar = absenceStats.value.absencesByFilter.map((item) =>
+                formatDate(item.date)
+            );
+            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            totalDureeData = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_duree || 0
+            );
             break;
-        case 'semaine':
-            labelsBar = absenceStats.value.absencesByFilter.map(item => `Semaine ${item.week}`);
-            dataBar = absenceStats.value.absencesByFilter.map(item => item.total_absences);
-            totalDureeData = absenceStats.value.absencesByFilter.map(item => item.total_duree || 0);
+        case "semaine":
+            labelsBar = absenceStats.value.absencesByFilter.map(
+                (item) => `Semaine ${item.week}`
+            );
+            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            totalDureeData = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_duree || 0
+            );
             break;
-        case 'mois':
-            labelsBar = absenceStats.value.absencesByFilter.map(item => getMonthName(item.month - 1));
-            dataBar = absenceStats.value.absencesByFilter.map(item => item.total_absences);
-            totalDureeData = absenceStats.value.absencesByFilter.map(item => item.total_duree || 0);
+        case "mois":
+            labelsBar = absenceStats.value.absencesByFilter.map((item) =>
+                getMonthName(item.month - 1)
+            );
+            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            totalDureeData = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_duree || 0
+            );
             break;
-        case 'annee':
-            labelsBar = absenceStats.value.absencesByFilter.map(item => item.year);
-            dataBar = absenceStats.value.absencesByFilter.map(item => item.total_absences);
-            totalDureeData = absenceStats.value.absencesByFilter.map(item => item.total_duree || 0);
+        case "annee":
+            labelsBar = absenceStats.value.absencesByFilter.map((item) => item.year);
+            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            totalDureeData = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_duree || 0
+            );
             break;
         default:
             console.error("Filtre inconnu :", filterType.value);
             return;
     }
 
-    absenceStats.value.totalAbsencesParType.forEach(item => {
+    absenceStats.value.totalAbsencesParType.forEach((item) => {
         if (!lineChartData[item.type_absence]) {
             lineChartData[item.type_absence] = new Array(labelsBar.length).fill(0); // Initialiser avec des zéros
             absenceTypes.push(item.type_absence);
@@ -420,21 +455,27 @@ const renderCharts = () => {
         // Appliquer le filtre sur les données de type d'absence
         let index;
         switch (filterType.value) {
-            case 'jour':
+            case "jour":
                 // Utiliser le format DD/MM/YYYY pour la comparaison
-                index = labelsBar.findIndex(label => formatDateToDDMMYYYY(label) === formatDateToDDMMYYYY(item.date));
+                index = labelsBar.findIndex(
+                    (label) => formatDateToDDMMYYYY(label) === formatDateToDDMMYYYY(item.date)
+                );
                 if (index === -1) {
-                    console.warn(`Date non trouvée pour l'item avec la date : ${formatDateToDDMMYYYY(item.date)}`);
+                    console.warn(
+                        `Date non trouvée pour l'item avec la date : ${formatDateToDDMMYYYY(
+                            item.date
+                        )}`
+                    );
                 }
                 break;
-            case 'semaine':
-                index = labelsBar.findIndex(label => label === `Semaine ${item.week}`);
+            case "semaine":
+                index = labelsBar.findIndex((label) => label === `Semaine ${item.week}`);
                 break;
-            case 'mois':
-                index = labelsBar.findIndex(label => label === getMonthName(item.month - 1));
+            case "mois":
+                index = labelsBar.findIndex((label) => label === getMonthName(item.month - 1));
                 break;
-            case 'annee':
-                index = labelsBar.findIndex(label => label.toString() === item.year.toString());
+            case "annee":
+                index = labelsBar.findIndex((label) => label.toString() === item.year.toString());
                 break;
             default:
                 index = -1;
@@ -446,12 +487,12 @@ const renderCharts = () => {
         }
     });
     function formatDateToDDMMYYYY(date) {
-    const d = new Date(date);
-    const day = (`0${d.getDate()}`).slice(-2);
-    const month = (`0${d.getMonth() + 1}`).slice(-2);
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-}
+        const d = new Date(date);
+        const day = `0${d.getDate()}`.slice(-2);
+        const month = `0${d.getMonth() + 1}`.slice(-2);
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
 
     // Graphique à barres
     if (barChart.value) {
@@ -468,7 +509,7 @@ const renderCharts = () => {
                     backgroundColor: "#4A919E",
                     borderColor: "#DBF9E7",
                     borderWidth: 1,
-                    yAxisID: 'absences', // Axe pour le total des absences
+                    yAxisID: "absences", // Axe pour le total des absences
                 },
                 {
                     label: "Durée Totale (jours)",
@@ -476,8 +517,8 @@ const renderCharts = () => {
                     backgroundColor: "#DBF9E7", // Couleur pour la durée totale
                     borderColor: "#FBFBFB", // Couleur de bordure pour la durée totale
                     borderWidth: 1,
-                    yAxisID: 'duree', // Indiquer que ce dataset utilise le deuxième axe Y
-                    type: 'bar', // Assurez-vous que c'est une barre
+                    yAxisID: "duree", // Indiquer que ce dataset utilise le deuxième axe Y
+                    type: "bar", // Assurez-vous que c'est une barre
                 },
             ],
         },
@@ -485,21 +526,21 @@ const renderCharts = () => {
             responsive: true,
             scales: {
                 absences: {
-                    type: 'linear',
-                    position: 'left',
+                    type: "linear",
+                    position: "left",
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Total des absences',
+                        text: "Total des absences",
                     },
                 },
                 duree: {
-                    type: 'linear',
-                    position: 'right',
+                    type: "linear",
+                    position: "right",
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Durée Totale (jours)',
+                        text: "Durée Totale (jours)",
                     },
                     grid: {
                         drawOnChartArea: false, // Empêche le dessin de la grille pour cet axe
@@ -510,8 +551,11 @@ const renderCharts = () => {
                 tooltip: {
                     callbacks: {
                         label: function (context) {
-                            let label = context.dataset.label || '';
-                            label += ': ' + context.parsed.y + (context.dataset.label === "Durée Totale (jours)" ? ' jours' : '');
+                            let label = context.dataset.label || "";
+                            label +=
+                                ": " +
+                                context.parsed.y +
+                                (context.dataset.label === "Durée Totale (jours)" ? " jours" : "");
                             return label;
                         },
                     },
@@ -559,8 +603,8 @@ const renderCharts = () => {
 };
 // Fonction pour obtenir une couleur aléatoire
 const getRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
+    const letters = "0123456789ABCDEF";
+    let color = "#";
     for (let i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 16)];
     }
@@ -571,13 +615,12 @@ onMounted(() => {
     fetchDepartements();
 });
 // Création d'une référence réactive pour l'entrée
-const inputValue = ref('');
+const inputValue = ref("");
 
 // Fonction pour enlever les caractères spéciaux
 const removeSpecialCharacters = (event) => {
-  inputValue.value = event.target.value.replace(/[.,;!]/g, '');
+    inputValue.value = event.target.value.replace(/[.,;!]/g, "");
 };
-
 </script>
 <template>
 
@@ -591,7 +634,7 @@ const removeSpecialCharacters = (event) => {
                         <div class="table-title">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h2>A propos des employes</h2>
+                                    <h2>Liste des employes</h2>
                                 </div>
                                 <div class="col-sm-6">
                                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -606,8 +649,6 @@ const removeSpecialCharacters = (event) => {
                                         <input type="text" id="input2" v-model="searchTerm" @input="fetchUsers"
                                             class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
                                     </div>
-
-
                                 </div>
                             </div>
                         </div>
@@ -625,30 +666,31 @@ const removeSpecialCharacters = (event) => {
                                         <th>Département</th>
                                         <th>Solde d'absence</th>
                                         <th>Plafonnement</th>
-                                        <th>PlafBool</th>
                                         <th v-if="userRole === 'ADMINISTRATEUR'">Action</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
-                                    <tr v-for="employee in paginatedEmployes" :key="employee.id"
+                                    <tr role="button" v-for="employee in paginatedEmployes" :key="employee.id"
                                         @click="showDashboard(employee)">
                                         <td>{{ employee.matricule }}</td>
                                         <td>{{ employee.nom_employe }}</td>
                                         <td>{{ employee.pre_employe }}</td>
-                                        <td>{{ employee.sexe }}</td>
+                                        <td>{{ employee.sexe === "F" ? "Femme" : "Homme" }}</td>
                                         <td>{{ employee.poste }}</td>
                                         <td>{{ employee.departement }}</td>
-                                        <td>{{ employee.solde_employe }}</td>
-                                        <td>{{ employee.plafonnement }}</td>
-                                        <td>{{ employee.plafonnementbolean }}</td>
+                                        <td>
+  {{ employee.solde_employe === 0 ? "Aucun" : employee.solde_employe === 1 ? "1 jour" : employee.solde_employe + " jours" }}
+</td>
+                                        <td>{{ employee.plafonnement + " jours" }}</td>
                                         <td class="action-buttons" v-if="userRole === 'ADMINISTRATEUR'">
                                             <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal"
                                                 data-bs-target="#modalupdate" @click="editEmploye(employee, $event)">
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                             </button>
                                             <button type="button" class="btn btn-danger btn-sm btn-xs"
-                                            @click="deleteEmploye(employee.id_employe, $event)">                                                <i class="fa-solid fa-trash"></i>
+                                                @click="deleteEmploye(employee.id_employe, $event)">
+                                                <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -656,8 +698,10 @@ const removeSpecialCharacters = (event) => {
                             </table>
                         </div>
 
-                        <div v-if="showModal" class="modal" tabindex="-1" style="display: block">
-                            <div class="modal-dialog modal-xl modal-dialog-centered modal-custom"> <!-- Utilisation de modal-xl pour un modal plus large -->                                <div class="modal-content">
+                        <div v-if="showModal" class="modal fade show" tabindex="-1" style="display: block">
+                            <div class="modal-dialog modal-xl modal-dialog-centered modal-custom">
+                                <!-- Utilisation de modal-xl pour un modal plus large -->
+                                <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title">
                                             Statistiques d'absence pour {{ selectedEmployee.nom_employe }}
@@ -685,7 +729,9 @@ const removeSpecialCharacters = (event) => {
                                                 placeholder="Date de début" />
                                             <input type="date" v-model="endDate" class="form-control me-2"
                                                 placeholder="Date de fin" />
-                                            <button class="btn btn-primary" @click="filterAbsences">Rechercher</button>
+                                            <button class="btn btn-primary" @click="filterAbsences">
+                                                Rechercher
+                                            </button>
                                         </div>
                                         <div class="d-flex justify-content-between">
                                             <div class="chart-container me-3" style="flex: 1">
@@ -700,6 +746,7 @@ const removeSpecialCharacters = (event) => {
                             </div>
                         </div>
                     </div>
+                    <div v-if="showModal" class="modal-backdrop fade show"></div>
                     <!-- Pagination controls -->
                 </div>
                 <nav aria-label="Page navigation example" class="navigation">
@@ -741,7 +788,7 @@ const removeSpecialCharacters = (event) => {
             </div>
 
             <!--Modal creation employe-->
-            <div class="modal fade" id="exampleModal" tabindex="-2" aria-labelledby="exampleModalLabel"
+            <div  class="modal fade" id="exampleModal" tabindex="-2" aria-labelledby="exampleModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog modal-s">
                     <div class="modal-content">
@@ -761,7 +808,8 @@ const removeSpecialCharacters = (event) => {
                                 <div class="flex flex-col sm:flex-row gap-4">
                                     <!-- Champ "Nom" -->
                                     <div class="relative w-full">
-                                        <input type="text" v-model="nom" id="floating_outlined" @input="removeSpecialCharacters"
+                                        <input type="text" v-model="nom" id="floating_outlined"
+                                            @input="removeSpecialCharacters"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
                                         <label for="floating_outlined"
@@ -808,7 +856,6 @@ const removeSpecialCharacters = (event) => {
                                             <option value="F">F</option>
                                         </select>
                                     </div>
-
                                 </div>
                                 <br />
                                 <div class="flex flex-col sm:flex-row gap-4">
@@ -839,7 +886,6 @@ const removeSpecialCharacters = (event) => {
                                             </option>
                                         </select>
                                     </div>
-
                                 </div>
 
                                 <br />
@@ -859,11 +905,11 @@ const removeSpecialCharacters = (event) => {
                                             class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                                         <label for="plafonnementbolean"
                                             class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                            Plafonnement Boolean
+                                            Dépasser plafonnement
                                         </label>
                                     </div>
                                 </div>
-                                <br>
+                                <br />
                                 <!-- bouton ajouter employer-->
                                 <div class="modal-footer">
                                     <button type="submit" style="color: #212e53"
@@ -876,7 +922,6 @@ const removeSpecialCharacters = (event) => {
                     </div>
                 </div>
             </div>
-
             <!--Modal modification employe-->
             <div class="modal fade" id="modalupdate" tabindex="-1" aria-labelledby="exampleModalLabel"
                 aria-hidden="true">
@@ -927,9 +972,13 @@ const removeSpecialCharacters = (event) => {
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Matricule</label>
                                     </div>
                                     <!-- champ sexe employe-->
-                                    <div class="col-span-2 sm:col-span-1 w-full">
+                                    <div class="relative w-full">
+                                        <label for="category"
+                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
+                                            Sexe
+                                        </label>
                                         <select id="category" v-model="sexe"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer">
                                             <option value="M">M</option>
                                             <option value="F">F</option>
                                         </select>
@@ -968,16 +1017,29 @@ const removeSpecialCharacters = (event) => {
                                     </div>
 
                                     <!-- Champ Plafonnement Boolean -->
+                                    <!-- Champ Plafonnement -->
+                                    <div class="relative flex-1">
+                                        <input type="number" v-model="solde_employe"
+                                            id="floating_outlined_solde_employe"
+                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                            placeholder=" " />
+                                        <label for="floating_outlined_solde_employe"
+                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">Solde</label>
+                                    </div>
+                                </div>
+                                <br />
+                                <div class="flex gap-4">
+                                    <!-- Champ Plafonnement Boolean -->
                                     <div class="relative flex items-center flex-1">
                                         <input type="checkbox" v-model="plafonnementbolean" id="plafonnementbolean"
                                             class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                                         <label for="plafonnementbolean"
                                             class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                            Plafonnement Boolean
+                                            Dépasser plafonnement
                                         </label>
                                     </div>
                                 </div>
-
+                                <br />
                                 <!-- bouton ajouter employer-->
                                 <div class="modal-footer">
                                     <button type="submit" style="color: #212e53"
@@ -1123,11 +1185,16 @@ table.table tr th:last-child {
     width: 100px;
     text-align: center;
 }
-td, th {
-    text-align: center; /* Centre le texte dans chaque cellule horizontalement */
-    vertical-align: middle; /* Centre verticalement (si nécessaire) */
-    padding: 10px; /* Ajoute de l'espace autour du texte pour plus de lisibilité */
-  }
+
+td,
+th {
+    text-align: center;
+    /* Centre le texte dans chaque cellule horizontalement */
+    vertical-align: middle;
+    /* Centre verticalement (si nécessaire) */
+    padding: 10px;
+    /* Ajoute de l'espace autour du texte pour plus de lisibilité */
+}
 
 table.table th i {
     margin: 0 5px;
@@ -1207,7 +1274,6 @@ table.table td:last-child i {
 .action-buttons button {
     justify-content: space-between;
     border: 0;
-
 }
 
 /* Bouton d'édition */
@@ -1248,11 +1314,24 @@ table.table td:last-child i {
         /* Couleur de fond au survol */
         color: black;
         /* Couleur du texte */
-
     }
 }
-  /* Si vous souhaitez appliquer une hauteur globale à toutes les cellules de la table */
-  td {
-    height: 40px; /* Ajustez cette valeur pour toutes les cellules */
-  }
+
+/* Si vous souhaitez appliquer une hauteur globale à toutes les cellules de la table */
+td {
+    height: 40px;
+    /* Ajustez cette valeur pour toutes les cellules */
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    /* Couleur noire avec opacité 50% */
+    z-index: 1040;
+    /* Assurez-vous que ce z-index est supérieur à celui de votre modal */
+}
 </style>

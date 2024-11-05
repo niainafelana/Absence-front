@@ -65,7 +65,7 @@ const fetchUser = async () => {
 };
 const paginatedUsers = computed(() => {
     const filteredUsers = userees.value.filter(user => {
-        return user.code_departement.toLowerCase().includes(searchTerm.value.toLowerCase());
+        return user.description.toLowerCase().includes(searchTerm.value.toLowerCase());
     });
 
     // Calcul de la pagination
@@ -179,20 +179,18 @@ const searchTerm = ref('');
 // Fonction pour récupérer les utilisateurs
 const fetchUsers = async () => {
     try {
-        console.log('Recherche d\'utilisateurs pour le terme:', searchTerm.value); // Log pour le terme de recherche
-        const response = await api.get('/utile/utilisateurs', {
+        const response = await api.get('/poste/description', {
             params: {
                 nom: searchTerm.value,
             },
         });
         paginatedUsers.value = response.data.data; // Met à jour les utilisateurs affichés
-        console.log('Réponse de l\'API:', response.data); // Log de la réponse
 
     } catch (error) {
-        console.error('Erreur lors de la récupération des utilisateurs:', error);
     }
 };
 watch(searchTerm, fetchUsers);
+
 
 </script>
 <template>
@@ -214,6 +212,16 @@ watch(searchTerm, fetchUsers);
                                         data-bs-target="#exampleModal">
                                         <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Fonction</span>
                                     </button>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <label for="input2"
+                                            class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Recherche</label>
+                                        <input fonction="text" id="input2" v-model="searchTerm" @input="fetchUsers"
+                                            class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                                    </div>
+
+
                                 </div>
 
                             </div>

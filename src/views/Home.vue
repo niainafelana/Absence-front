@@ -6,22 +6,18 @@ import Swal from 'sweetalert2';
 import { useRouter } from 'vue-router';
 const currentDate = ref(new Date().toISOString().split('T')[0]);
 const currentTime = ref(new Date().toLocaleTimeString());
+
+
+
 // Déclaration des variables
 const email = ref('');
 const password = ref('');
 const error = ref(null);
 const router = useRouter();
 
-const isPasswordVisible = ref(false);
-
-const passwordFieldType = computed(() =>
-    isPasswordVisible.value ? 'text' : 'password'
-);
-
-const iconClass = computed(() =>
-    isPasswordVisible.value ? 'fa-eye-slash' : 'fa-eye'
-);
-
+const isPasswordVisible = ref(false); 
+const passwordFieldType = computed(() => (isPasswordVisible.value ? 'text' : 'password'));
+const iconClass = computed(() => (isPasswordVisible.value ? 'fa-eye' : 'fa-eye-slash'));
 const togglePasswordVisibility = () => {
     isPasswordVisible.value = !isPasswordVisible.value;
 };
@@ -38,15 +34,7 @@ const login = async () => {
         // Stocker le token dans le localStorage
         localStorage.setItem('access_token', response.data.access_token);
 // Afficher une alerte de succès avec le modèle SweetAlert
-Swal.fire({
-            position: 'center',
-            icon: 'success',
-            title: 'Connexion réussie',
-            showConfirmButton: false,
-            timer: 1000,
-        });
-        // Redirection après la connexion réussie
-      // Redirection après la connexion réussie
+
       setTimeout(() => {
             router.push('/accueil'); // Exemple de redirection
         }, 1500); // Rediriger après que l'alerte disparaisse
@@ -84,7 +72,7 @@ Swal.fire({
             </div>
             <div class="time">
                 <div id="head"></div>
-                <p>{{ currentTime }}</p>
+                <p id="currenttime">{{ currentTime }}</p>
             </div>
         </div>
         <br>
@@ -109,8 +97,10 @@ Swal.fire({
                                 <input :type="passwordFieldType" v-model="password" name="password">
                                 <i :class="['fas', iconClass, 'toggle-password']" @click="togglePasswordVisibility"></i>
                             </div>
+                            <router-link to="/code" class="text-sm text-blue-600 hover:underline">Mot de passe oublié ?</router-link>
                             <br>
                         </div>
+                        
                         <div class="button">
                             <button type="submit"> Entrer </button>
                         </div>
