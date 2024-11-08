@@ -12,6 +12,13 @@ const role = ref("");
 const userees = ref([]);
 const currentPage = ref(1); // Page actuelle
 const itemsPerPage = ref(5); // Nombre d'employés par page
+
+const isPasswordVisible = ref(false);
+const passwordFieldType = computed(() => (isPasswordVisible.value ? 'text' : 'password'));
+const iconClass = computed(() => (isPasswordVisible.value ? 'fa-eye' : 'fa-eye-slash'));
+const togglePasswordVisibility = () => {
+    isPasswordVisible.value = !isPasswordVisible.value;
+};
 const ajoutUser = async () => {
     if (
         !nom.value ||
@@ -110,7 +117,7 @@ const editUser = (usere) => {
     nom.value = usere.nom;
     email.value = usere.email;
     role.value = usere.role;
- 
+
 };
 
 const updateUser = async () => {
@@ -119,8 +126,8 @@ const updateUser = async () => {
             nom: nom.value,
             email: email.value,
             role: role.value,
-            password:password.value,
-           
+            password: password.value,
+
         });
 
         Swal.fire({
@@ -207,7 +214,7 @@ watch(searchTerm, fetchUsers);
 
     <body>
         <div class="d-flex">
-            <Navbar class="navbar" />
+            <Navbar />
             <Utilisateur class="utilisateur" />
             <div class="container-lg">
                 <div class="table-responsive">
@@ -215,7 +222,7 @@ watch(searchTerm, fetchUsers);
                         <div class="table-title">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h2>A propos des Utilisateurs</h2>
+                                    <h2>Listes Utilisateurs</h2>
                                 </div>
                                 <div class="col-sm-6">
                                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -258,7 +265,8 @@ watch(searchTerm, fetchUsers);
                                                 data-bs-target="#modalupdate" @click="editUser(usere)">
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                             </button>
-                                            <button type="button" class="btn btn-danger ms-2 btn-sm btn-xs"  @click="deleteUser(usere.id)">
+                                            <button type="button" class="btn btn-danger ms-2 btn-sm btn-xs"
+                                                @click="deleteUser(usere.id)">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </td>
@@ -367,14 +375,19 @@ watch(searchTerm, fetchUsers);
 
                                     <!-- Champ "Sexe" -->
                                     <div class="relative w-full">
-                                        <input type="text" v-model="password" id="floating_outlined_motif"
-                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                        <input :type="passwordFieldType" v-model="password" id="floating_outlined_motif"
+                                            class="block px-2.5 pb-2.5 pt-4 w-full pr-10 text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                             placeholder=" " />
+                                        <i :class="['fas', iconClass, 'toggle-password']"
+                                            @click="togglePasswordVisibility"
+                                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"></i>
+
                                         <label for="floating_outlined_motif"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
                                             Password
                                         </label>
                                     </div>
+
                                 </div>
 
                                 <br />
@@ -392,8 +405,8 @@ watch(searchTerm, fetchUsers);
                     </div>
                 </div>
             </div>
-  <!--Modal modification employe-->
-  <div class="modal fade" id="modalupdate" tabindex="-1" aria-labelledby="exampleModalLabel"
+            <!--Modal modification employe-->
+            <div class="modal fade" id="modalupdate" tabindex="-1" aria-labelledby="exampleModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog modal-s">
                     <div class="modal-content">
@@ -439,8 +452,8 @@ watch(searchTerm, fetchUsers);
                                 <div class="flex flex-col sm:flex-row gap-4">
                                     <!-- Champ "Motif" -->
 
-                                      <!-- champ sexe employe-->
-                                      <div class="relative w-full">
+                                    <!-- champ sexe employe-->
+                                    <div class="relative w-full">
                                         <label for="category"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
                                             Rôle
@@ -451,18 +464,24 @@ watch(searchTerm, fetchUsers);
                                             <option value="UTILISATEUR">UTILISATEUR</option>
                                         </select>
                                     </div>
-                                    
-                                    <div class="relative w-full">
-                                        <input type="text" v-model="password" id="floating_outlined_password"
-                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                            placeholder=" " />
-                                        <label for="floating_outlined_password"
-                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                                            Mot de passe
-                                        </label>
-                                    </div>
 
-                                 
+                                    <div class="relative w-full">
+    <input :type="passwordFieldType" v-model="password" id="floating_outlined_password"
+        class="block px-2.5 pb-2.5 pt-4 w-full pr-10 text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+        placeholder=" " />
+    
+    <!-- Icône pour afficher/masquer le mot de passe -->
+    <i :class="['fas', iconClass, 'toggle-password']" @click="togglePasswordVisibility"
+        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"></i>
+
+    <label for="floating_outlined_password"
+        class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
+        Mot de passe
+    </label>
+</div>
+
+
+
                                 </div>
 
                                 <br />
@@ -472,7 +491,7 @@ watch(searchTerm, fetchUsers);
                                 <div class="modal-footer">
                                     <button type="submit" style="color: #212e53"
                                         class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                        Ajouter
+                                        Modifier
                                     </button>
                                 </div>
                             </form>
@@ -662,70 +681,82 @@ table.table td:last-child i {
     transform: scale(1.05);
     /* Légère augmentation de la taille lors du survol */
 }
+
 .btn-xs {
-  font-size: 0.6rem;
-  padding: 0.1rem 0.2rem;
-  /* Réduit le padding */
+    font-size: 0.6rem;
+    padding: 0.1rem 0.2rem;
+    /* Réduit le padding */
 }
 
 /* Boutons d'action */
 .action-buttons {
-  display: flex;
-  justify-content: space-around;
+    display: flex;
+    justify-content: space-around;
 }
 
 .action-buttons button {
-  justify-content: space-between;
-  margin-bottom: 23%;
-  border: 0;
+    justify-content: space-between;
+    margin-bottom: 23%;
+    border: 0;
 
 }
 
 /* Bouton d'édition */
 .btn-warning {
-  background-color: #ffc107;
-  /* Couleur de fond par défaut */
-  color: white;
-  /* Couleur du texte */
+    background-color: #ffc107;
+    /* Couleur de fond par défaut */
+    color: white;
+    /* Couleur du texte */
 
-  &:hover {
-    background-color: #e0a800;
-    /* Couleur de fond au survol */
-  }
+    &:hover {
+        background-color: #e0a800;
+        /* Couleur de fond au survol */
+    }
 }
 
 /* Bouton d'impression */
 .btn-info {
-  background-color: #17a2b8;
-  /* Couleur de fond par défaut */
-  color: white;
-  /* Couleur du texte */
+    background-color: #17a2b8;
+    /* Couleur de fond par défaut */
+    color: white;
+    /* Couleur du texte */
 
-  &:hover {
-    background-color: #138496;
-    /* Couleur de fond au survol */
-  }
+    &:hover {
+        background-color: #138496;
+        /* Couleur de fond au survol */
+    }
 }
 
 /* Bouton de suppression */
 .btn-danger {
-  background-color: #dc3545;
-  /* Couleur de fond par défaut */
-  color: white;
-  /* Couleur du texte */
-
-  &:hover {
-    background-color: #c82333;
-    /* Couleur de fond au survol */
-    color: black;
+    background-color: #dc3545;
+    /* Couleur de fond par défaut */
+    color: white;
     /* Couleur du texte */
 
-  }
-}
-td, th {
-    text-align: center; /* Centre le texte dans chaque cellule horizontalement */
-    vertical-align: middle; /* Centre verticalement (si nécessaire) */
-    padding: 10px; /* Ajoute de l'espace autour du texte pour plus de lisibilité */
-  }
+    &:hover {
+        background-color: #c82333;
+        /* Couleur de fond au survol */
+        color: black;
+        /* Couleur du texte */
 
+    }
+}
+
+td,
+th {
+    text-align: center;
+    /* Centre le texte dans chaque cellule horizontalement */
+    vertical-align: middle;
+    /* Centre verticalement (si nécessaire) */
+    padding: 10px;
+    /* Ajoute de l'espace autour du texte pour plus de lisibilité */
+}
+
+#floating_outlined_motif i {
+    margin-left: -35px;
+    cursor: pointer;
+    line-height: 50px;
+    padding: 0;
+}
 </style>

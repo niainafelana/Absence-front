@@ -4,7 +4,11 @@
       <h2>MiezakaAbsence</h2>
     </div>
     <ul class="nav-menu">
-      <li v-for="item in navItems" :key="item.path" :class="{ active: isActive(item.path) }">
+      <li
+        v-for="item in navItems"
+        :key="item.path"
+        :class="{ active: isActive(item.path) }"
+      >
         <RouterLink :to="item.path">
           <i :class="item.icon"></i>
           <span>{{ item.name }}</span>
@@ -15,8 +19,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed } from "vue";
+import { useRoute } from "vue-router";
 
 const route = useRoute();
 
@@ -25,27 +29,33 @@ const isActive = (path) => {
 };
 
 const navItems = [
-  { name: 'Accueil', path: '/accueil', icon: 'bi bi-house-fill' },
-  { name: 'Employe', path: '/employe', icon: 'bi bi-person-fill' },
-  { name: 'Demande', path: '/demande', icon: 'bi bi-calendar-fill' },
-  { name: 'Utilisateur', path: '/user', icon: 'bi bi-people-fill' },
-  { name: 'TypeAbsence', path: '/type', icon: 'bi bi-tag-fill' },
-  { name: 'Departement', path: '/departement', icon: 'bi bi-diagram-3-fill' },
-
-  { name: 'Poste', path: '/poste', icon: 'bi bi-briefcase-fill' },
+  { name: "Accueil", path: "/accueil", icon: "bi bi-house-fill" },
+  { name: "Employe", path: "/employe", icon: "bi bi-person-fill" },
+  { name: "Demande", path: "/demande", icon: "bi bi-calendar-fill" },
+  { name: "Utilisateur", path: "/user", icon: "bi bi-people-fill" },
+  { name: "TypeAbsence", path: "/type", icon: "bi bi-tag-fill" },
+  { name: "Departement", path: "/departement", icon: "bi bi-diagram-3-fill" },
+  { name: "Poste", path: "/poste", icon: "bi bi-briefcase-fill" },
+  { name: "Dashboard", path: "/dashboard", icon: "bi bi-diagram-3-fill" },
+  { name: "Profil", path: "/profil", icon: "bi bi-person-circle" },
 ];
 
 const getRoleFromToken = (token) => {
   if (!token) return null;
-  const payload = token.split('.')[1];
-  const base64Url = payload.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(atob(base64Url).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+  const payload = token.split(".")[1];
+  const base64Url = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    atob(base64Url)
+      .split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
   const parsedPayload = JSON.parse(jsonPayload);
   return parsedPayload.role;
 };
 
 const userRole = computed(() => {
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem("access_token");
   if (token) {
     return getRoleFromToken(token);
   }
@@ -69,12 +79,10 @@ const userRole = computed(() => {
 .logo {
   text-align: center;
   padding: 0 20px;
-  margin-top: -100%;
   h2 {
     color: $primary;
     font-size: 18px;
     font-weight: bold;
-    
   }
 }
 
@@ -83,9 +91,6 @@ const userRole = computed(() => {
   padding: 0;
   margin: 0;
 
-  li:first-child {
-    margin-top: -200%; // Élimine la marge supérieure du premier élément de la liste
-  }
   li {
     padding: 0 16px;
     margin-bottom: 8px;
@@ -109,12 +114,12 @@ const userRole = computed(() => {
       }
     }
 
-    &:hover, &.active {
+    &:hover,
+    &.active {
       a {
         background-color: rgba($primary, 0.2);
         color: lighten($primary, 20%);
         border-radius: 20px;
-
       }
     }
 
@@ -152,5 +157,4 @@ const userRole = computed(() => {
     }
   }
 }
-
 </style>

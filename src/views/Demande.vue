@@ -92,7 +92,7 @@ onMounted(fetchAbsences);
 <template>
     <body>
         <div class="d-flex">
-            <Navbar class="navbar" />
+            <Navbar />
             <Utilisateur class="utilisateur" />
             <div class="container-lg">
 
@@ -111,16 +111,7 @@ onMounted(fetchAbsences);
       />
     </div>
 
-    <div class="flex-1">
-      <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom de l'employé</label>
-      <input 
-        type="text" 
-        v-model="search.pre_employe" 
-        id="prenom" 
-        placeholder="Entrez le prénom"
-        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-      />
-    </div>
+   
 
     <div class="flex-1">
       <label for="startDate" class="block text-sm font-medium text-gray-700">Date de début</label>

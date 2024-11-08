@@ -197,7 +197,7 @@ watch(searchTerm, fetchUsers);
 
     <body>
         <div class="d-flex">
-            <Navbar class="navbar" />
+            <Navbar />
             <Utilisateur class="utilisateur" />
             <div class="container-lg">
                 <div class="table-responsive">
@@ -205,7 +205,7 @@ watch(searchTerm, fetchUsers);
                         <div class="table-title">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <h2>A propos des Fonctions</h2>
+                                    <h2>Liste des Fonctions</h2>
                                 </div>
                                 <div class="col-sm-6">
                                     <button fonction="button" class="btn btn-success" data-bs-toggle="modal"
@@ -310,7 +310,7 @@ watch(searchTerm, fetchUsers);
                   font-weight: bold;
                   text-align: center;
                 ">
-                                Créer Nouvelle utilisateur
+                                Créer Nouvelle Fonction
                             </h5>
                             <button fonction="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -379,7 +379,7 @@ watch(searchTerm, fetchUsers);
                   font-weight: bold;
                   text-align: center;
                 ">
-                                Modification de l'utilisateur
+                                Modification du fonnction
                             </h5>
                             <button fonction="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -433,7 +433,7 @@ watch(searchTerm, fetchUsers);
                                 <div class="modal-footer">
                                     <button fonction="submit" style="color: #212e53"
                                         class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                        Ajouter
+                                        Mettre à jour
                                     </button>
                                 </div>
                             </form>

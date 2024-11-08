@@ -9,7 +9,7 @@ import { ref, onMounted, computed } from "vue";
 
     <body>
         <div class="d-flex">
-            <Navbar class="navbar" />
+            <Navbar />
             <Utilisateur class="utilisateur" />
             <div class="container-lg">
                 <!-- Contenu principal ici -->

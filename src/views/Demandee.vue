@@ -23,7 +23,7 @@ const formatDate = (date) => {
   const year = d.getFullYear();
 
   // Retourner la date formatée au format "DD-MM-YYYY"
-  return `${day}-${month}-${year}`;
+  return `${day}/${month}/${year}`;
 };
 
 //variable
@@ -262,7 +262,13 @@ const filtrerDemandes = async () => {
       },
     });
     demandees.value = response.data; // Met à jour la liste des demandes filtrées
-    console.log(response);
+    if (Object.keys(response.data).length == 0){
+      document.getElementById("button-addon-excel").disabled = true;
+      console.log('zero')
+    }
+    else{
+      document.getElementById("button-addon-excel").disabled = false;
+    }
   } catch (error) {
     console.error("Error filtering demandes", error);
   }
@@ -309,76 +315,24 @@ const exportData = () => {
   }
 };
 
-const exportToCSV = () => {
-  if (demandees.value.length === 0) {
-    console.error("Pas de données à exporter.");
-    return;
-  }
 
-  // Définir les en-têtes du fichier CSV
-  const headers = [
-    "Nom et Prénom",
-    "Matricule",
-    "Motif Employé",
-    "Jours d'absence",
-    "Solde Employé",
-    "Date de départ",
-    "Date de retour",
-    "Motif",
-    "Date Fin",
-  ];
-  let csvContent = headers.join(",") + "\n";
-
-  // Parcourir les données et ajouter chaque ligne au fichier CSV
-  demandees.value.forEach((item) => {
-    const row = [
-      `${item.personnel.nom_employe} ${item.personnel.pre_employe}`, // Nom et Prénom
-      item.personnel.matricule, // Motif Employé        // Matricule (vous pouvez remplacer cette valeur par une vraie donnée dynamique)
-      item.personnel.poste, // Motif Employé
-      item.jours_absence, // Jours d'absence
-      item.personnel.solde_employe, // Solde Employé
-      formatDate(item.date_debut), // Date de départ
-      formatDate(item.date_retour), // Date de retour
-      item.motif, // Motif
-      formatDate(item.date_fin), // Date Fin
-    ].join(",");
-
-    csvContent += row + "\n";
-  });
-
-  // Créer un blob pour le fichier CSV
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-
-  // Créer un lien pour télécharger le fichier
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.setAttribute("href", url);
-  link.setAttribute("download", "demandes_export.csv");
-  link.style.visibility = "hidden";
-
-  // Ajouter le lien à la page et déclencher le téléchargement
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
- const exportToExcel = () => {
+const exportToExcel = () => {
   if (demandees.value.length === 0) {
     console.error("Pas de données à exporter.");
     return;
   }
 
   const ws_data = demandees.value.map((item) => [
-  `${item.personnel.nom_employe} ${item.personnel.pre_employe}`, // Nom et Prénom
-  item.personnel.matricule, // Matricule
-  item.personnel.poste, // Poste
-  item.jours_absence, // Jours d'absence
-  item.employe ? item.employe.solde_employe : 'N/A', // Solde Employé, avec une valeur par défaut
-  formatDate(item.date_debut), // Date de départ
-  formatDate(item.date_retour), // Date de retour
-  item.motif, // Motif
-  formatDate(item.date_fin), // Date Fin
-]);
+    `${item.personnel.nom_employe} ${item.personnel.pre_employe}`, // Nom et Prénom
+    item.personnel.matricule, // Matricule
+    item.personnel.poste, // Poste
+    item.jours_absence, // Jours d'absence
+    item.employe ? item.employe.solde_employe : 'N/A', // Solde Employé, avec une valeur par défaut
+    formatDate(item.date_debut), // Date de départ
+    formatDate(item.date_retour), // Date de retour
+    item.motif, // Motif
+    formatDate(item.date_fin), // Date Fin
+  ]);
 
 
   // Ajouter les en-têtes de colonne
@@ -402,229 +356,289 @@ const exportToCSV = () => {
   XLSX.utils.book_append_sheet(wb, ws, "Feuille1");
 
   // Exporter le fichier Excel
-  XLSX.writeFile(wb, "export.xlsx");
+  XLSX.writeFile(wb, "Liste demande absence.xlsx");
 };
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = src;
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Image not loaded"));
-  });
+function formatNumber(num){
+  return parseFloat(num).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 function imprimerDemande(demande) {
   const css = `
     <style>
-      .print-container {
+      @page {
+        size: A4;
+        margin: 1cm;
+      }
+      
+      body {
+        margin: 0;
         font-family: Arial, sans-serif;
+      }
+      
+      .print-container {
         padding: 20px;
+        max-width: 21cm;
+        margin: 0 auto;
+        box-sizing: border-box;
       }
+      
       .page {
-        margin: 20px;
-        page-break-inside: avoid;
+        position: relative;
+        margin-bottom: 30px;
       }
-      .header, .content, .footer {
+      
+      .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 20px;
       }
-      .flex {
+
+      .logo-section {
         display: flex;
       }
-      .justify-between {
-        justify-content: space-between;
+      
+      .logo {
+        width: 80px;
+        height: 80px;
+        margin-right: 20px;
       }
-      .items-start {
-        align-items: flex-start;
-      }
-      .border-b {
-        border-bottom: 1px solid #000;
-      }
-      .pb-4 {
-        padding-bottom: 16px;
-      }
-      .text-lg {
-        font-size: 18px;
-      }
-      .font-bold {
+      
+      .watermark {
+        font-size: 54px;
         font-weight: bold;
+        color: #e5e5e5;
+        opacity: 0.2;
+        width: 700px;
+        text-align:center;
+        margin-top:auto;
+        margin-bottom:auto;
+
+
       }
-      .uppercase {
-        text-transform: uppercase;
+      
+      .company-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+        margin-top: 10px;
       }
-      .text-center {
-        text-align: center;
-      }
-      .my-6 {
-        margin-top: 24px;
-        margin-bottom: 24px;
-      }
-      .space-y-2 > * + * {
-        margin-top: 8px;
-      }
-      .border-t-2 {
-        border-top: 2px solid #000;
-      }
-      .border-gray-400 {
-        border-color: #d1d5db;
-      }
-      .text-sm {
+      
+      .date {
+        text-align: right;
         font-size: 14px;
       }
-      .w-20 {
-        width: 80px;
+      
+      .title {
+        font-size: 18px;
+        font-weight: bold;
+        text-transform: uppercase;
+        text-align: center;
+        margin: 24px 0;
+        text-decoration: underline;
       }
-      .text-right {
-        text-align: right;
+      
+      .form-content {
+        font-size: 14px;
+        display: grid;
+      }
+      
+      .form-row {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+      }
+      
+      .separator {
+        border: none;
+        border-top: 2px dashed #666;
+        margin: 150px 50px 20px 50px;
+      }
+      
+      .signatures {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 28px;
+        font-size: 14px;
+        text-align: center;
+        font-weight:bold;
+      }
+      
+      .signature-box {
+        flex: 1;
+      }
+      
+      .document-number {
+        margin-top: 24px;
+      }
+
+      .copy-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .copy-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-top: 10px;
       }
 
       @media print {
-        @page {
-          size: A4; 
-          margin: 10mm; 
-              margin: 0; 
-        }
-  body {
-    margin: 20px; 
-  }
         .print-container {
-          font-family: Arial, sans-serif;
-          padding: 10px;
-          font-size: 12px;
-        }
-        .page {
-          page-break-inside: avoid;
-        }
-        .my-6 {
-          margin: 10px 0;
-        }
-
-        .space-y-2 > * + * {
-          margin-top: 5px;
-        }
-
-        /* Ajuster les images */
-        .header img {
-          width: 50px;
-          height: auto;
-        }
-
-        .border-b {
-          border-bottom: 1px solid #000;
-        }
-
-        .pb-4 {
-          padding-bottom: 8px;
-        }
-
-        /* Masquer les éléments non nécessaires à l'impression */
-        .no-print {
-          display: none;
+          padding: 0;
         }
       }
     </style>
-    `;
+  `;
 
   const contenu = `
     ${css}
     <div class="print-container">
-      <!-- Contenu à imprimer -->
+      <!-- Original -->
       <div class="page">
-        <!-- Première partie (Originale) -->
-       <div class="content">
-          <header class="flex justify-between items-start border-b pb-4">
-            <div class="flex items-center space-x-4">
-              <div class="w-20">
-              </div>
-              <div>
-                <h2 class="text-lg font-bold uppercase">Société Miezaka EURL</h2>
-                <p>Téléphone : 75 516 55</p>
-                <p>Fax : 75 52125</p>
-                <p>Fianarantsoa - 301</p>
-              </div>
-            </div>
-            <div class="text-right">
-              <p>Fianarantsoa, 02/09/2024</p>
-            </div>
-          </header>
-
-          <section class="my-6">
-            <h2 class="text-lg font-bold uppercase text-center mb-4">Demande d'Autorisation d'Absence</h2>
-            <div class="space-y-2 text-sm">
-              <p><strong>Nom(s) et prénom(s) :</strong> ${demande.personnel.nom_employe
-    } ${demande.personnel.pre_employe}</p>
-              <p><strong>N° Matricule :</strong> ${demande.personnel.matricule}</p>
-              <p><strong>Fonction :</strong> ${demande.personnel.poste}</p>
-              <p><strong>Nombre de jours :</strong> ${demande.jours_absence}</p>
-              <p><strong>Congé restant :</strong> ${demande.solde_employe}</p>
-              <p><strong>Date de départ :</strong> ${formatDate(demande.date_debut)}</p>
-              <p><strong>Date de retour :</strong> ${formatDate(demande.date_retour)}</p>
-              <p><strong>Motif :</strong> ${demande.motif}</p>
-            </div>
-          </section>
-
-          <footer class="flex justify-between mt-10">
-            <div class="text-center text-sm">
-              <p>L'intéressé</p>
-            </div>
-            <div class="text-center text-sm">
-              <p>Collègue (Sign+Prénom)</p>
-            </div>
-            <div class="text-center text-sm">
-              <p>La Direction</p>
-            </div>
-          </footer>
+        <div class="header-section">
+          <div class="logo-section">
+            <img src="logo.jpg" alt="SOCIETE MIEZAKA" class="logo">
+            <div class="watermark">ORIGINAL</div>
+          </div>
+        </div>
+        <div class="company-info">
+          <div>
+            <div>Sahalava</div>
+            <div>Téléphone : 75 516 55</div>
+            <div>Fax : 75 52125</div>
+            <div>Fianarantsoa - 301</div>
+          </div>
+          <div class="date">
+            <div>Fianarantsoa, le ${formatDate(new Date())}</div>
+          </div>
         </div>
 
-        <!-- Séparateur -->
-        <div class="border-t-2 border-gray-400 my-6"></div>
+        <h1 class="title">Demande d'Autorisation d'Absence</h1>
 
-        <!-- Deuxième partie (Copie) -->
-        <div class="content">
-          <header class="flex justify-between items-start border-b pb-4">
-            <div class="flex items-center space-x-4">
-              <div class="w-20">
-              </div>
-              <div>
-                <h2 class="text-lg font-bold uppercase">Société Miezaka EURL</h2>
-                <p>Téléphone : 75 516 55</p>
-                <p>Fax : 75 52125</p>
-                <p>Fianarantsoa - 301</p>
-              </div>
-            </div>
-            <div class="text-right">
-              <p>Fianarantsoa, 02/09/2024</p>
-            </div>
-          </header>
+        <div class="form-content">
+          <div class="form-row">
+            <span>Nom(s) et prénom(s) :</span>
+            <span>${demande.personnel.nom_employe} ${demande.personnel.pre_employe}</span>
+          </div>
+          <div class="form-row">
+            <span>N° Matricule :</span>
+            <span>${demande.personnel.matricule}</span>
+          </div>
+          <div class="form-row">
+            <span>Fonction :</span>
+            <span>${demande.personnel.poste}</span>
+          </div>
+          <div class="form-row">
+            <span>Nombre de jours :</span>
+            <span><b>${formatNumber(demande.jours_absence)}</b></span>
+          </div>
+          <div class="form-row">
+            <span>Congé restant :</span>
+            <span><b>${formatNumber(demande.solde_employe)}</b></span>
+          </div>
+          <div class="form-row">
+            <span>Date de départ :</span>
+            <span>${formatDate(demande.date_debut)}</span>
+          </div>
+          <div class="form-row">
+            <span>Date de retour :</span>
+            <span>${formatDate(demande.date_retour)}</span>
+          </div>
+          <div class="form-row">
+            <span>Motif :</span>
+            <span>${demande.motif}</span>
+          </div>
+        </div>
 
-          <section class="my-6">
-            <h2 class="text-lg font-bold uppercase text-center mb-4">Demande d'Autorisation d'Absence</h2>
-            <div class="space-y-2 text-sm">
-              <p><strong>Nom(s) et prénom(s) :</strong> ${demande.personnel.nom_employe
-    } ${demande.personnel.pre_employe}</p>
-              <p><strong>N° Matricule :</strong>${demande.personnel.matricule}</p>
-              <p><strong>Fonction :</strong> ${demande.personnel.poste}</p>
-              <p><strong>Nombre de jours :</strong> ${demande.jours_absence}</p>
-              <p><strong>Congé restant :</strong> ${demande.solde_employe}</p>
-              <p><strong>Date de départ :</strong> ${formatDate(demande.date_debut)}</p>
-              <p><strong>Date de retour :</strong> ${formatDate(demande.date_retour)}</p>
-              <p><strong>Motif :</strong> ${demande.motif}</p>
-            </div>
-          </section>
+        <div class="signatures">
+          <div class="signature-box">
+            <div>L'intéressé</div>
+          </div>
+          <div class="signature-box">
+            <div>Collègue(Sign+Prénom)</div>
+          </div>
+          <div class="signature-box">
+            <div>La Direction</div>
+          </div>
+        </div>
+      </div>
 
-          <footer class="flex justify-between mt-10">
-            <div class="text-center text-sm">
-              <p>L'intéressé</p>
-            </div>
-            <div class="text-center text-sm">
-              <p>Collègue (Sign+Prénom)</p>
-            </div>
-            <div class="text-center text-sm">
-              <p>La Direction</p>
-            </div>
-          </footer>
+      <hr class="separator">
+
+      <!-- Copie -->
+      <div class="page">
+        <div class="header-section">
+          <div class="logo-section">
+            <img src="logo.jpg" alt="SOCIETE MIEZAKA" class="logo">
+            <div class="watermark">COPIE</div>
+          </div>
+        </div>
+        <div class="company-info">
+          <div>
+            <div>Sahalava</div>
+            <div>Téléphone : 75 516 55</div>
+            <div>Fax : 75 52125</div>
+            <div>Fianarantsoa - 301</div>
+          </div>
+          <div class="date">
+            <div>Fianarantsoa, le ${formatDate(new Date())}</div>
+          </div>
+        </div>
+
+        <h1 class="title">Demande d'Autorisation d'Absence</h1>
+
+        <div class="form-content">
+          <div class="form-row">
+            <span>Nom(s) et prénom(s) :</span>
+            <span>${demande.personnel.nom_employe} ${demande.personnel.pre_employe}</span>
+          </div>
+          <div class="form-row">
+            <span>N° Matricule :</span>
+            <span>${demande.personnel.matricule}</span>
+          </div>
+          <div class="form-row">
+            <span>Fonction :</span>
+            <span>${demande.personnel.poste}</span>
+          </div>
+         <div class="form-row">
+            <span>Nombre de jours :</span>
+            <span><b>${formatNumber(demande.jours_absence)}</b></span>
+          </div>
+          <div class="form-row">
+            <span>Congé restant :</span>
+            <span><b>${formatNumber(demande.solde_employe)}</b></span>
+          </div>
+          <div class="form-row">
+            <span>Date de départ :</span>
+            <span>${formatDate(demande.date_debut)}</span>
+          </div>
+          <div class="form-row">
+            <span>Date de retour :</span>
+            <span>${formatDate(demande.date_retour)}</span>
+          </div>
+          <div class="form-row">
+            <span>Motif :</span>
+            <span>${demande.motif}</span>
+          </div>
+        </div>
+
+        <div class="signatures">
+          <div class="signature-box">
+            <div>L'intéressé</div>
+          </div>
+          <div class="signature-box">
+            <div>Collègue(Sign+Prénom)</div>
+          </div>
+          <div class="signature-box">
+            <div>La Direction</div>
+          </div>
         </div>
       </div>
     </div>
-    `;
+  `;
+
   const fenetreImpression = window.open("", "", "width=800,height=600");
   fenetreImpression.document.open();
   fenetreImpression.document.write(contenu);
@@ -666,7 +680,7 @@ const downloadFile = async (demandeId) => {
 
   <body>
     <div class="d-flex">
-      <Navbar class="navbar" />
+      <Navbar />
       <Utilisateur class="utilisateur" />
       <div class="container-lg">
         <div class="table-responsive">
@@ -674,7 +688,7 @@ const downloadFile = async (demandeId) => {
             <div class="table-title">
               <div class="row">
                 <div class="col-sm-6">
-                  <h2>Demande Absence</h2>
+                  <h2>Listes Demandes Absences</h2>
                 </div>
                 <div class="col-sm-6">
                   <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal"
@@ -707,10 +721,6 @@ const downloadFile = async (demandeId) => {
                       class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
                   </div>
                   <div class="flex items-center gap-3" style="max-width: 300px">
-                    <span class="export-label">Export:</span>
-                    <button class="export-button" type="button" id="button-addon-csv" @click="exportToCSV">
-                      CSV
-                    </button>
                     <button class="export-button" type="button" id="button-addon-excel" @click="exportToExcel">
                       Excel
                     </button>
@@ -740,37 +750,42 @@ const downloadFile = async (demandeId) => {
                   <tr v-for="demandee in paginatedAbsences" :key="demandee.id">
                     <td>{{ demandee.personnel.matricule }}</td>
                     <td> {{ demandee.personnel.nom_employe }} <br>
-                      {{demandee.personnel.pre_employe}}</td>
+                      {{ demandee.personnel.pre_employe }}</td>
                     <td>{{ demandee.personnel.poste }}</td>
-                    <td>{{ demandee.jours_absence + ' jours'  }}</td>
-                    <td>{{ demandee.solde_employe + ' jours'  }}</td>
+                    <td>
+                      {{ demandee.jours_absence === 0 ? "Epuisé" : demandee.jours_absence === 1 ? "1 jour" :
+                        demandee.jours_absence + " jours" }}
+                    </td>
+                    <td>
+                      {{ demandee.solde_employe === 0 ? "Epuisé" : demandee.solde_employe === 1 ? "1 jour" :
+                        demandee.solde_employe + " jours" }}
+                    </td>
                     <td>{{ formatDate(demandee.date_debut) }}</td>
                     <td>{{ formatDate(demandee.date_fin) }}</td>
                     <td>{{ demandee.motif }}</td>
-               
-                    <td class="action-buttons ps-4"> <!-- Ajustez 'ps-2' ou 'ps-3' selon le besoin -->  <!-- Les deux premiers boutons alignés en haut -->
-  <div class="d-flex gap-1">
-    <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal" data-bs-target="#modalupdate" @click="editEmploye(demandee)">
-      <i class="fa-solid fa-pen-to-square"></i>
-    </button>
-    <button type="button" class="btn btn-info btn-sm btn-xs" @click.stop="imprimerDemande(demandee)">
-      <i class="fa-solid fa-print"></i>
-    </button>
-  </div>
-  
-  <!-- Espace pour séparer les boutons du haut et du bas -->
-  <div class="my-1"></div>
-  
-  <!-- Les deux derniers boutons alignés en bas -->
-  <div class="d-flex gap-1">
-    <button type="button" class="btn btn-danger btn-sm btn-xs" @click="deleteDemande(demandee.id_demande)">
-      <i class="fa-solid fa-trash-can"></i>
-    </button>
-    <button class="btn btn-secondary btn-sm btn-xs" @click="downloadFile(demandee.id_demande)">
-      <i class="fs-6 fa-solid fa-circle-down"></i>
-    </button>
-  </div>
-</td>
+
+                    <td class="action-buttons ps-4">
+                      <div class="d-flex gap-1">
+                        <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal"
+                          data-bs-target="#modalupdate" @click="editEmploye(demandee)">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm btn-xs"
+                          @click.stop="imprimerDemande(demandee)">
+                          <i class="fa-solid fa-print"></i>
+                        </button>
+                      </div>
+                      <div class="my-1"></div>
+                      <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-danger btn-sm btn-xs"
+                          @click="deleteDemande(demandee.id_demande)">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        <button class="btn btn-secondary btn-sm btn-xs" @click="downloadFile(demandee.id_demande)">
+                          <i class="fs-6 fa-solid fa-circle-down"></i>
+                        </button>
+                      </div>
+                    </td>
 
                   </tr>
                 </tbody>
@@ -884,17 +899,17 @@ const downloadFile = async (demandeId) => {
 
 
                   <div class="relative w-full">
-                                        <label for="category"
-                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
-                                            Demi_journée
-                                        </label>
-                                        <select id="category" v-model="formData.duredebut"
-                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer">
-                                            <option value="matin">Matin</option>
-                                            <option value="apresmidi">Après-midi</option>
-                                        </select>
-                                    </div>
-                  
+                    <label for="category"
+                      class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
+                      Demi_journée
+                    </label>
+                    <select id="category" v-model="formData.duredebut"
+                      class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer">
+                      <option value="matin">Matin</option>
+                      <option value="apresmidi">Après-midi</option>
+                    </select>
+                  </div>
+
                 </div>
 
                 <br />
@@ -919,7 +934,7 @@ const downloadFile = async (demandeId) => {
                       d'absence</label>
                   </div>
                 </div>
-<br>
+                <br>
                 <!-- bouton ajouter employer-->
                 <div class="modal-footer">
                   <button type="submit" style="color: #212e53"
@@ -945,7 +960,7 @@ const downloadFile = async (demandeId) => {
                 font-weight: bold;
                 text-align: center;
               ">
-              Modification de l'employe
+              Modification du demande
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
@@ -1126,12 +1141,13 @@ table.table th i {
 /* Ajustez la hauteur des cellules spécifiques */
 
 
-  /* Si vous souhaitez appliquer une hauteur globale à toutes les cellules de la table */
-  td {
-    height: 40px; /* Ajustez cette valeur pour toutes les cellules */
-  }
+/* Si vous souhaitez appliquer une hauteur globale à toutes les cellules de la table */
+td {
+  height: 40px;
+  /* Ajustez cette valeur pour toutes les cellules */
+}
 
-  
+
 table.table td:last-child i {
   opacity: 0.9;
   font-size: 15px;
@@ -1194,6 +1210,7 @@ table.table td:last-child i {
   padding: 0.1rem 0.2rem;
   /* Réduit le padding */
 }
+
 /* Boutons d'action */
 .action-buttons {
   justify-content: space-between;
@@ -1202,8 +1219,9 @@ table.table td:last-child i {
 
 .action-buttons button {
   justify-content: space-between;
- border: 0;
-     margin-right: 8px; /* Ajustez cette valeur selon vos besoins */
+  border: 0;
+  margin-right: 8px;
+  /* Ajustez cette valeur selon vos besoins */
 }
 
 /* Bouton d'édition */
@@ -1246,12 +1264,14 @@ table.table td:last-child i {
     /* Couleur du texte */
   }
 }
-td, th {
-    text-align: center; /* Centre le texte dans chaque cellule horizontalement */
-    vertical-align: middle; /* Centre verticalement (si nécessaire) */
-    padding: 10px; /* Ajoute de l'espace autour du texte pour plus de lisibilité */
-  }
-  
- 
 
+td,
+th {
+  text-align: center;
+  /* Centre le texte dans chaque cellule horizontalement */
+  vertical-align: middle;
+  /* Centre verticalement (si nécessaire) */
+  padding: 10px;
+  /* Ajoute de l'espace autour du texte pour plus de lisibilité */
+}
 </style>

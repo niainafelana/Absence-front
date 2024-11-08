@@ -218,7 +218,7 @@ watch(searchTerm, fetchUsers);
 
     <body>
         <div class="d-flex">
-            <Navbar class="navbar" />
+            <Navbar />
             <Utilisateur class="utilisateur" />
             <div class="container-lg">
                 <div class="table-responsive">
@@ -354,9 +354,14 @@ watch(searchTerm, fetchUsers);
                                 <br />
 
                                 <div class="flex flex-col sm:flex-row gap-4">
-                                    <div class="col-span-2 sm:col-span-1 w-full">
+                                   
+                                    <div class="relative w-full">
+                                        <label for="category"
+                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
+                                            Sexe
+                                        </label>
                                         <select id="category" v-model="type"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                                            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer">
                                             <option value="M">Masculin</option>
                                             <option value="F">Féminin</option>
                                             <option value="T">PourTous</option>
@@ -425,18 +430,22 @@ watch(searchTerm, fetchUsers);
                                 <br />
 
                                 <div class="flex flex-col sm:flex-row gap-4">
-                                    <!-- Champ "Motif" -->
-                                    <div class="col-span-2 sm:col-span-1 w-full">
-                                        <select id="category" v-model="type"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
-                                            <option value="M">Masculin</option>
-                                            <option value="F">Féminin</option>
-                                            <option value="T">PourTous</option>
-                                        </select>
-                                    </div>
+                                   
+                                   <div class="relative w-full">
+                                       <label for="category"
+                                           class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">
+                                           Sexe
+                                       </label>
+                                       <select id="category" v-model="type"
+                                           class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer">
+                                           <option value="M">Masculin</option>
+                                           <option value="F">Féminin</option>
+                                           <option value="T">PourTous</option>
+                                       </select>
+                                   </div>
 
-                                 
-                                </div>
+                               
+                               </div>
 
                                 <br />
 
@@ -445,7 +454,7 @@ watch(searchTerm, fetchUsers);
                                 <div class="modal-footer">
                                     <button type="submit" style="color: #212e53"
                                         class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                        Ajouter
+                                        Mettre à jour
                                     </button>
                                 </div>
                             </form>

@@ -8,9 +8,10 @@
         <i class="bi bi-person"></i>
         <span class="user-name">{{ role }}</span>
       </div>
-      <div class="logout-section" @click="confirmLogout">
-        <i class="fs-5 bi bi-power logout-icon"></i>
-      </div>
+      <button class="logout-section" @click="confirmLogout" type="button" aria-label="Logout">
+  <i class="fs-5 bi bi-power logout-icon"></i>
+</button>
+
     </div>
   </div>
 </template>
@@ -40,7 +41,7 @@ const confirmLogout = () => {
     showCancelButton: true,
     confirmButtonColor: '#3085d6',
     cancelButtonColor: '#d33',
-    confirmButtonText: 'Oui, déconnectez-moi',
+    confirmButtonText: 'Oui, se déconnecter',
     cancelButtonText: 'Annuler',
   }).then((result) => {
     if (result.isConfirmed) {
@@ -48,7 +49,6 @@ const confirmLogout = () => {
     }
   });
 };
-
 
 onMounted(() => {
   // Suppression du cache

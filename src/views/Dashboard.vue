@@ -2,176 +2,375 @@
 import Navbar from "@/components/Navbar.vue";
 import Utilisateur from "@/components/Utilisateur.vue";
 import { ref, onMounted } from "vue";
-import { Chart, registerables } from 'chart.js';
-import api from '../api'; // Assurez-vous que le chemin est correct
+import Chart from "chart.js/auto";
+import api from "../api";
+import { registerables } from "chart.js";
+const barChart = ref(null);
+const startDate = ref("");
+const endDate = ref("");
+const filterType = ref("mois");
+const absenceStats = ref({
+  totalAbsences: 0,
+  absencesByFilter: [],
+  totalAbsencesParType: [],
+});
 
 // Enregistrer les composants nécessaires de Chart.js
 Chart.register(...registerables);
 
-const absenceChart = ref(null);
-const search = ref({
-  nom_employe: '',
-  pre_employe: '',
-  startDate: '',
-  endDate: ''
-});
-const data = ref({
-  totalAbsences: 0,
-  absencesByMonth: []
-});
-const error = ref(null);
-
-// Fonction pour récupérer les données d'absences depuis l'API
-async function fetchAbsences() {
-  error.value = null; // Réinitialiser l'erreur
+const fetchAbsences = async (employee) => {
   try {
-    const response = await api.get('/dashboard/state', { params: search.value });
+    const response = await api.get("/dashboard/tableaudeboard", {
+      params: {
+        startDate: startDate.value,
+        endDate: endDate.value,
+        filtre: filterType.value,
+      },
+    });
 
-    if (!response.data) {
-      throw new Error("Aucune donnée retournée par l'API.");
+    if (response.data) {
+      console.log("Données reçues de l'API:", response.data); // Log pour vérifier les données
+      absenceStats.value = response.data;
+      renderCharts();
+    } else {
+      console.error(
+        "Erreur : données non définies dans la réponse",
+        response.data
+      );
+      absenceStats.value = { totalAbsences: 0 };
+    }
+  } catch (error) {
+    console.error("Erreur lors de la récupération des absences:", error);
+  }
+};
+
+const filterAbsences = async () => {
+  try {
+    const response = await api.get("/dashboard/tableaudeboard", {
+      params: {
+        startDate: startDate.value,
+        endDate: endDate.value,
+        filtre: filterType.value,
+      },
+    });
+
+    if (response.data) {
+      absenceStats.value = response.data;
+      renderCharts();
+    } else {
+      console.error(
+        "Erreur : données non définies dans la réponse",
+        response.data
+      );
+      absenceStats.value = { totalAbsences: 0 };
+    }
+  } catch (error) {
+    console.error("Erreur lors de la récupération des absences :", error);
+  }
+};
+
+// Fonction pour formater la date au format JJ-MM-AAAA
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+  return date.toLocaleDateString("fr-FR", options);
+};
+
+// Fonction pour obtenir le nom du mois
+const getMonthName = (monthNumber) => {
+  const monthNames = [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre",
+  ];
+  return monthNames[monthNumber];
+};
+
+const renderCharts = () => {
+  let labelsBar = [];
+  let dataBar = [];
+  let totalDureeData = [];
+
+  // Initialisation des datasets pour les types d'absences
+  let lineChartData = {};
+  let absenceTypes = [];
+
+  // Gestion des différents filtres
+  switch (filterType.value) {
+    case "jour":
+      labelsBar = absenceStats.value.absencesByFilter.map((item) =>
+        formatDate(item.date)
+      );
+      dataBar = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_absences
+      );
+      totalDureeData = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_duree || 0
+      );
+      break;
+    case "semaine":
+      labelsBar = absenceStats.value.absencesByFilter.map(
+        (item) => `Semaine ${item.week}`
+      );
+      dataBar = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_absences
+      );
+      totalDureeData = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_duree || 0
+      );
+      break;
+    case "mois":
+      labelsBar = absenceStats.value.absencesByFilter.map((item) =>
+        getMonthName(item.month - 1)
+      );
+      dataBar = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_absences
+      );
+      totalDureeData = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_duree || 0
+      );
+      break;
+    case "annee":
+      labelsBar = absenceStats.value.absencesByFilter.map((item) => item.year);
+      dataBar = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_absences
+      );
+      totalDureeData = absenceStats.value.absencesByFilter.map(
+        (item) => item.total_duree || 0
+      );
+      break;
+    default:
+      console.error("Filtre inconnu :", filterType.value);
+      return;
+  }
+
+  absenceStats.value.totalAbsencesParType.forEach((item) => {
+    if (!lineChartData[item.type_absence]) {
+      lineChartData[item.type_absence] = new Array(labelsBar.length).fill(0); // Initialiser avec des zéros
+      absenceTypes.push(item.type_absence);
+    }
+    console.log(absenceStats.value.absencesByFilter);
+
+    // Appliquer le filtre sur les données de type d'absence
+    let index;
+    switch (filterType.value) {
+      case "jour":
+        // Utiliser le format DD/MM/YYYY pour la comparaison
+        index = labelsBar.findIndex(
+          (label) =>
+            formatDateToDDMMYYYY(label) === formatDateToDDMMYYYY(item.date)
+        );
+        if (index === -1) {
+          console.warn(
+            `Date non trouvée pour l'item avec la date : ${formatDateToDDMMYYYY(
+              item.date
+            )}`
+          );
+        }
+        break;
+      case "semaine":
+        index = labelsBar.findIndex(
+          (label) => label === `Semaine ${item.week}`
+        );
+        break;
+      case "mois":
+        index = labelsBar.findIndex(
+          (label) => label === getMonthName(item.month - 1)
+        );
+        break;
+      case "annee":
+        index = labelsBar.findIndex(
+          (label) => label.toString() === item.year.toString()
+        );
+        break;
+      default:
+        index = -1;
+        break;
     }
 
-    data.value = response.data;
-
-    // Une fois les données récupérées, initialiser le graphique
-    initChart();
-  } catch (err) {
-    console.error('Erreur lors de la récupération des données :', err);
-    error.value = 'Erreur lors de la récupération des données. Vérifiez vos critères de recherche.';
-  }
-}
-
-// Fonction pour initialiser le graphique
-let chartInstance = null;
-
-function initChart() {
-  // Tableau des noms de mois
-  const monthNames = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-  ];
-
-  // Convertir les numéros de mois en noms
-  const months = data.value.absencesByMonth.map(entry => monthNames[entry.month - 1]);
-  const totalAbsences = data.value.absencesByMonth.map(entry => entry.total_absences);
-
-  const ctx = absenceChart.value.getContext('2d');
-
-  // Détruire le graphique précédent s'il existe
-  if (chartInstance) {
-    chartInstance.destroy();
+    if (index !== -1) {
+      lineChartData[item.type_absence][index] += item.total_absences;
+    }
+  });
+  function formatDateToDDMMYYYY(date) {
+    const d = new Date(date);
+    const day = `0${d.getDate()}`.slice(-2);
+    const month = `0${d.getMonth() + 1}`.slice(-2);
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
-  // Créer un nouveau graphique et le stocker dans chartInstance
-  chartInstance = new Chart(ctx, {
-    type: 'bar',
+  // Graphique à barres
+  if (barChart.value) {
+    barChart.value.destroy();
+  }
+  barChart.value = new Chart(document.getElementById("barChart"), {
+    type: "bar",
     data: {
-      labels: months, // Utilisation des noms des mois
+      labels: labelsBar,
+      datasets: [
+        {
+          label: "Total des absences",
+          data: dataBar,
+          backgroundColor: "#4A919E",
+          borderColor: "#DBF9E7",
+          borderWidth: 1,
+          yAxisID: "absences", // Axe pour le total des absences
+        },
+       
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        absences: {
+          type: "linear",
+          position: "left",
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "Total des absences",
+          },
+        },
+       
+      },
+  
+    },
+  });
+};
+
+// Variable pour stocker les données récupérées
+const absencesByYear = ref([]);
+
+// Fonction pour récupérer les données de l'API
+const fetchData = async () => {
+  try {
+    const response = await api.get('/dashboard/tableauannee'); // Assurez-vous que l'URL est correcte
+    console.log("Données reçues de l'API:", response.data);
+
+    // Stockez les données dans la variable absencesByYear
+    absencesByYear.value = response.data.absencesByYear;
+
+    // Créez le graphique après avoir récupéré les données
+    createLineChart();
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données:', error);
+  }
+};
+
+
+const createLineChart = () => {
+  const ctx = document.getElementById('lineChart').getContext('2d');
+
+  // Extraction des années (labels) et des absences (total_absences)
+  const labels = absencesByYear.value.map(entry => entry.year);  // Années
+  const totalAbsences = absencesByYear.value.map(entry => entry.total_absences);  // Total des absences
+
+  console.log("Labels (Années):", labels);  // Affiche les années
+  console.log("Total Absences:", totalAbsences);  // Affiche le total des absences
+
+  // Création du graphique
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,  // Années sur l'axe des abscisses
       datasets: [{
-        label: 'Total des Absences',
-        data: totalAbsences,
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1
+        label: 'Total Absences par Année',
+        data: totalAbsences,  // Total des absences sur l'axe des ordonnées
+        fill: false,
+        borderColor: '#42A5F5',  // Couleur de la ligne
+        tension: 0.1
       }]
     },
     options: {
+      responsive: true,
       scales: {
         y: {
-          beginAtZero: true
+          beginAtZero: true  // L'axe des ordonnées commence à zéro
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(tooltipItem) {
+              return `Absences: ${tooltipItem.raw}`;  // Affiche le nombre d'absences lors du survol
+            }
+          }
         }
       }
     }
   });
-}
+};
 
-// Récupérer les données lorsque le composant est monté
+// Appeler la fonction pour récupérer les données lors du montage du composant
+onMounted(() => {
+  fetchData();
+});
 onMounted(fetchAbsences);
 </script>
 
 <template>
-    <body>
-        <div class="d-flex">
-            <Navbar class="navbar" />
-            <Utilisateur class="utilisateur" />
-            <div class="container-lg">
 
-                <!-- Formulaire de recherche -->
-               <!-- Formulaire de recherche -->
-               <form @submit.prevent="fetchAbsences" class="space-y-4 mx-4 md:mx-8 lg:mx-16">
-  <div class="flex flex-wrap items-end space-x-4">
-    <div class="flex-1">
-      <label for="nom" class="block text-sm font-medium text-gray-700">Nom de l'employé</label>
-      <input 
-        type="text" 
-        v-model="search.nom_employe" 
-        id="nom" 
-        placeholder="Entrez le nom"
-        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-      />
-    </div>
+  <body>
+    <div class="d-flex">
+      <Navbar />
+      <Utilisateur class="utilisateur" />
+      <div class="container-lg">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-custom">
+          <div class="modal-content">
+            <div class="modal-body">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>Tableau de board :</h3>
+              </div>
+              <div class="d-flex mb-3">
+                <select v-model="filterType" class="form-select me-2" @change="filterAbsences">
+                  <option value="jour">Jour</option>
+                  <option value="semaine">Semaine</option>
+                  <option value="mois">Mois</option>
+                  <option value="annee">Année</option>
+                </select>
 
-    <div class="flex-1">
-      <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom de l'employé</label>
-      <input 
-        type="text" 
-        v-model="search.pre_employe" 
-        id="prenom" 
-        placeholder="Entrez le prénom"
-        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-      />
-    </div>
+                <input type="date" v-model="startDate" class="form-control me-2" placeholder="Date de début" />
+                <input type="date" v-model="endDate" class="form-control me-2" placeholder="Date de fin" />
+                <button class="btn btn-primary" @click="filterAbsences">
+                  Rechercher
+                </button>
+              </div>
+              <!-- Affichage du total des absences
+                                         <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <p>
+                                                <strong>Total des absences :</strong>
+                                                <strong>{{ absenceStats.totalAbsences }}</strong>
+                                            </p>
+                                        </div>
+                                        
+                                         -->
 
-    <div class="flex-1">
-      <label for="startDate" class="block text-sm font-medium text-gray-700">Date de début</label>
-      <input 
-        type="date" 
-        v-model="search.startDate" 
-        id="startDate"
-        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-      />
-    </div>
-
-    <div class="flex-1">
-      <label for="endDate" class="block text-sm font-medium text-gray-700">Date de fin</label>
-      <input 
-        type="date" 
-        v-model="search.endDate" 
-        id="endDate"
-        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-      />
-    </div>
-
-    <div>
-      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-        Rechercher
-      </button>
-    </div>
-  </div>
-</form>
-
-
-
-                <!-- Nouvelle carte pour le total des absences -->
-                <div class="flex space-x-6 mt-6">
-  <!-- Nouvelle carte pour le total des absences -->
-  <div class="absence-card bg-white p-4 rounded-lg shadow-md w-1/3">
-    <h2 class="text-lg font-semibold mb-2">Total des Absences</h2>
-    <p class="text-3xl font-bold text-indigo-600">{{ data.totalAbsences }}</p>
-  </div>
-
-  <!-- Graphique -->
-  <div class="w-2/3">
-    <canvas ref="absenceChart" width="400" height="200"></canvas>
-  </div>
-</div>
-
-<!-- Affichage des erreurs -->
-<div v-if="error" class="error text-red-500 mt-4">{{ error }}</div>
-
+              <div class="d-flex justify-content-between">
+                <div class="chart-container me-3" style="flex: 1">
+                  <canvas id="barChart"></canvas>
+                </div>
+                <div class="chart-container ms-3" style="flex: 1">
+                  <canvas id="lineChart"></canvas>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
-    </body>
+      </div>
+    </div>
+    <div v-if="showModal" class="modal-backdrop fade show"></div>
+    <!-- Pagination controls -->
+  </body>
 </template>
 
 <style lang="scss" scoped>
@@ -180,13 +379,23 @@ onMounted(fetchAbsences);
 body {
   color: #566787;
   background-color: $text;
-  font-family: 'Times New Roman', Times, serif;
+  font-family: "Times New Roman", Times, serif;
   font-size: 15px;
 }
 
 .d-flex {
   display: flex;
 }
+.chart-container {
+  width: 700px; /* Appliquez la largeur souhaitée */
+  height: 400px; /* Ajustez la hauteur en conséquence */
+}
+
+canvas {
+  width: 100% ; /* Force le canvas à prendre toute la largeur de son conteneur */
+  height: 90% !important; /* Force le canvas à prendre toute la hauteur de son conteneur */
+}
+
 
 .navbar {
   height: 100vh;
@@ -195,30 +404,30 @@ body {
 }
 
 .container-lg {
-  margin-left: 17%;
   width: 100%;
-  padding: 1px;
   position: fixed;
   margin-top: 7%;
   margin-left: 15.5%;
-  box-shadow: 10px 10px 10px 10px #F0F0F0;
+  box-shadow: 10px 10px 10px 10px #f0f0f0;
   flex-direction: column;
+  padding: 1%;
+  height: 80%;
 }
 
-.search-form {
-  display: flex;
-  flex-direction: column;
-}
+
 
 .search-fields {
   display: flex;
-  gap: 10px; /* Espacement entre les champs */
-  flex-wrap: wrap; /* Pour gérer le débordement si l'écran est trop petit */
+  gap: 10px;
+  /* Espacement entre les champs */
+  flex-wrap: wrap;
+  /* Pour gérer le débordement si l'écran est trop petit */
 }
 
 .search-fields div {
   display: flex;
-  flex-direction: column; /* Étiquette au-dessus de l'input */
+  flex-direction: column;
+  /* Étiquette au-dessus de l'input */
 }
 
 .absence-card {
@@ -234,4 +443,18 @@ body {
   color: red;
   margin-top: 10px;
 }
+  /* Étendre la largeur de la modale */
+  .modal-custom {
+    width: 100%;
+    max-width: 90vw; /* Prend jusqu'à 90% de la largeur de la fenêtre */
+  }
+
+  /* Étendre les conteneurs de graphiques */
+  .chart-container {
+    width: 100%;
+  }
+  
+  #lineChart{
+    height: 100%;
+  }
 </style>

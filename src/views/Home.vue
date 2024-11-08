@@ -66,17 +66,7 @@ const login = async () => {
 <template>
 
     <body>
-        <div class="header">
-            <div class="date">
-                <p>{{ currentDate }}</p>
-            </div>
-            <div class="time">
-                <div id="head"></div>
-                <p id="currenttime">{{ currentTime }}</p>
-            </div>
-        </div>
-        <br>
-        <div class="content">
+                <div class="content">
             <div class="image">
                 <img src="../assets/photos/login.avif" alt="">
             </div>
@@ -221,8 +211,8 @@ button {
     justify-content: center;
     align-items: center;
     background-color: $text;
-    max-width: 400px;
-    max-height: 60vh;
+    max-width: 500px;
+    height: 50vh;
     font-size: 14px;
     margin-left: -50px;
 }
