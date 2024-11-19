@@ -30,7 +30,7 @@ const isActive = (path) => {
 
 const navItems = [
   { name: "Accueil", path: "/accueil", icon: "bi bi-house-fill" },
-  { name: "Employe", path: "/employe", icon: "bi bi-person-fill" },
+  { name: "Employé", path: "/employe", icon: "bi bi-person-fill" },
   { name: "Demande", path: "/demande", icon: "bi bi-calendar-fill" },
   { name: "Utilisateur", path: "/user", icon: "bi bi-people-fill" },
   { name: "TypeAbsence", path: "/type", icon: "bi bi-tag-fill" },

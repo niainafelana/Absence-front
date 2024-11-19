@@ -9,8 +9,8 @@
         <span class="user-name">{{ role }}</span>
       </div>
       <button class="logout-section" @click="confirmLogout" type="button" aria-label="Logout">
-  <i class="fs-5 bi bi-power logout-icon"></i>
-</button>
+        <i class="fs-5 bi bi-power logout-icon"></i>
+      </button>
 
     </div>
   </div>
@@ -26,11 +26,11 @@ import { useRouter } from 'vue-router';
 
 const nom = ref('');
 const role = ref('');
-const email= ref('')
+const email = ref('')
 
 const logout = () => {
   localStorage.removeItem('access_token');
-  router.replace({ name: 'home' }); 
+  router.replace({ name: 'home' });
   window.location.reload();
 };
 
@@ -45,7 +45,7 @@ const confirmLogout = () => {
     cancelButtonText: 'Annuler',
   }).then((result) => {
     if (result.isConfirmed) {
-      logout(); 
+      logout();
     }
   });
 };
@@ -84,7 +84,7 @@ const getUtilisateur = () => {
     const decoded = decode(payload); // Décodage manuel
     nom.value = decoded.nom_user; // Extraire le nom
     role.value = decoded.role; // Extraire le rôle
-    email.value=decoded.email;
+    email.value = decoded.email;
   }
 };
 
@@ -99,31 +99,30 @@ onMounted(() => {
 
 .top-navbar {
   display: flex;
-  justify-content: space-between; /* Assure que les sections gauche et droite sont bien placées */
-  align-items: center; /* Aligne verticalement les éléments au centre */
+  justify-content: space-between;
+  align-items: center;
   padding: 15px 40px;
-  background-color:$text;
+  background-color: $text;
   border-bottom: 2px solid #ddd;
   width: 100%;
-  box-shadow: 10px 10px 5px #F0F0F0;
 }
 
-.left-section {
-  margin-left: 250px; /* Ajoute un espace à gauche pour éloigner l'ID du bord */
-}
+
 
 .left-section .user-id {
   color: $primary;
   font-size: 14px;
   vertical-align: middle;
-  font-weight: bold; /* Assure que le texte est centré verticalement */
+  font-weight: bold;
+  /* Assure que le texte est centré verticalement */
 }
 
 .right-section {
   display: flex;
   align-items: center;
   margin-left: auto;
-  gap: 40px; /* Ajoute un espace de 20px entre les éléments de la section */
+  gap: 40px;
+  /* Ajoute un espace de 20px entre les éléments de la section */
 
 }
 
@@ -139,7 +138,7 @@ onMounted(() => {
 .user-profile {
   display: flex;
   align-items: center;
-  color:$primary;
+  color: $primary;
   font-weight: bold;
 }
 
@@ -153,9 +152,12 @@ onMounted(() => {
 }
 
 .logout-icon {
-  color:$accent; 
-  transform: scale(1.1); /* Agrandit légèrement l'icône au survol */
+  color: $accent;
+  transform: scale(1.1);
   background-color: $primary;
   border-radius: 50%;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-bottom: 3px;
 }
 </style>

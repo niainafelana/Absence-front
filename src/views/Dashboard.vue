@@ -55,6 +55,7 @@ const filterAbsences = async () => {
     });
 
     if (response.data) {
+      console.log(response.data);
       absenceStats.value = response.data;
       renderCharts();
     } else {
@@ -320,6 +321,18 @@ onMounted(fetchAbsences);
 
 <template>
 
+
+
+
+
+
+
+
+
+
+
+
+
   <body>
     <div class="d-flex">
       <Navbar />
@@ -345,15 +358,7 @@ onMounted(fetchAbsences);
                   Rechercher
                 </button>
               </div>
-              <!-- Affichage du total des absences
-                                         <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <p>
-                                                <strong>Total des absences :</strong>
-                                                <strong>{{ absenceStats.totalAbsences }}</strong>
-                                            </p>
-                                        </div>
-                                        
-                                         -->
+           
 
               <div class="d-flex justify-content-between">
                 <div class="chart-container me-3" style="flex: 1">
@@ -379,8 +384,7 @@ onMounted(fetchAbsences);
 body {
   color: #566787;
   background-color: $text;
-  font-family: "Times New Roman", Times, serif;
-  font-size: 15px;
+  font-size: 20px;
 }
 
 .d-flex {

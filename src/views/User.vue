@@ -19,6 +19,30 @@ const iconClass = computed(() => (isPasswordVisible.value ? 'fa-eye' : 'fa-eye-s
 const togglePasswordVisibility = () => {
     isPasswordVisible.value = !isPasswordVisible.value;
 };
+
+const getRoleFromToken = (token) => {
+    if (!token) return null;
+    const payload = token.split(".")[1];
+    const base64Url = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+        atob(base64Url)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+    );
+    const parsedPayload = JSON.parse(jsonPayload);
+    return parsedPayload.role;
+};
+
+// Récupère le rôle de l'utilisateur à partir du token
+const userRole = computed(() => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+        return getRoleFromToken(token);
+    }
+    return null;
+});
+
 const ajoutUser = async () => {
     if (
         !nom.value ||
@@ -213,45 +237,52 @@ watch(searchTerm, fetchUsers);
 <template>
 
     <body>
-        <div class="d-flex">
-            <Navbar />
-            <Utilisateur class="utilisateur" />
-            <div class="container-lg">
-                <div class="table-responsive">
-                    <div class="table-wrapper">
-                        <div class="table-title">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <h2>Listes Utilisateurs</h2>
-                                </div>
-                                <div class="col-sm-6">
-                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                        data-bs-target="#exampleModal">
-                                        <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Utilisateur</span>
-                                    </button>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <div class="flex items-center gap-2">
-                                        <label for="input2"
-                                            class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Recherche</label>
-                                        <input type="text" id="input2" v-model="searchTerm" @input="fetchUsers"
-                                            class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                                    </div>
+        <div class="d-flex flex-column flex-md-row" style="height: 100vh; overflow: hidden">
+            <!-- Navbar à gauche, largeur fixe -->
+            <div class="navbar-left" style="width: 200px">
+                <Navbar />
+            </div>
 
+            <!-- Section principale sans scroll -->
+            <div class="d-flex flex-column flex-grow-1 p-0">
+                <!-- Utilisateur en haut avec hauteur automatique -->
+                <div class="utilisateur-top m-0" style="flex-shrink: 0">
+                    <Utilisateur class="utilisateur" />
+                </div>
 
-                                </div>
-                            </div>
+                <!-- Conteneur principal sans overflow -->
+                <div class="container-fluid flex-grow-1 d-flex flex-column"
+                    style="width: calc(100% - 40px);margin: 20px 20px 0 20px;height: 100vh;overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);        position: relative;  /* Permet à l'ombre de bien se propager */ ">
+                    <!-- En-tête avec liste des employés et bouton d'ajout -->
+
+                    <div class="row p-3" style="flex-shrink: 0">
+                        <div class="col">
+                            <h4>Listes Utilisateurs</h4>
                         </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                                data-bs-target="#exampleModal">
+                                <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Utilisateur</span>
+                            </button>
+                        </div>
+                    </div>
 
-                        <!--Liste des employes-->
-                        <div class="table-scroll-container">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-header">
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="text" id="input2" v-model="searchTerm" @input="fetchUsers"
+                            class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    </div>
+                    <!-- Table des employés qui prend toute la hauteur restante -->
+                    <div class="table-wrapper flex-grow-1" style="overflow-y: auto; height: 100%; position: relative;">
+                        <div class="table-responsive" style="height: 100%; overflow-y: auto;">
+                            <table class="table table-striped table-hover w-100">
+                                <!-- En-tête du tableau (fixe en haut) -->
+                                <thead style="position: sticky; top: 0; background-color: white; z-index: 2;">
+
                                     <tr>
-                                        <th>Nom</th>
+                                     <th scope="col">Nom</th>
                                         <th>Email</th>
                                         <th>Role</th>
-                                        <th>Action</th>
+                                        <th v-if="userRole === 'ADMINISTRATEUR'">Action</th>
                                     </tr>
                                 </thead>
 
@@ -260,7 +291,7 @@ watch(searchTerm, fetchUsers);
                                         <td>{{ usere.nom }}</td>
                                         <td>{{ usere.email }}</td>
                                         <td>{{ usere.role }}</td>
-                                        <td class="button">
+                                        <td  class="button" v-if="userRole === 'ADMINISTRATEUR'">
                                             <button class="btn btn-warning btn-sm btn-xs" data-bs-toggle="modal"
                                                 data-bs-target="#modalupdate" @click="editUser(usere)">
                                                 <i class="fa-solid fa-pen-to-square"></i>
@@ -273,10 +304,12 @@ watch(searchTerm, fetchUsers);
                                     </tr>
                                 </tbody>
                             </table>
+
                         </div>
                     </div>
-                    <!-- Pagination controls -->
                 </div>
+
+                <div v-if="showModal" class="modal-backdrop fade show"></div>
                 <nav aria-label="Page navigation example" class="navigation">
                     <ul class="flex items-center -space-x-px h-20 text-sm">
                         <li>
@@ -313,6 +346,10 @@ watch(searchTerm, fetchUsers);
                         </li>
                     </ul>
                 </nav>
+
+
+
+
             </div>
 
             <!--Modal creation employe-->
@@ -466,19 +503,21 @@ watch(searchTerm, fetchUsers);
                                     </div>
 
                                     <div class="relative w-full">
-    <input :type="passwordFieldType" v-model="password" id="floating_outlined_password"
-        class="block px-2.5 pb-2.5 pt-4 w-full pr-10 text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-        placeholder=" " />
-    
-    <!-- Icône pour afficher/masquer le mot de passe -->
-    <i :class="['fas', iconClass, 'toggle-password']" @click="togglePasswordVisibility"
-        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"></i>
+                                        <input :type="passwordFieldType" v-model="password"
+                                            id="floating_outlined_password"
+                                            class="block px-2.5 pb-2.5 pt-4 w-full pr-10 text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                            placeholder=" " />
 
-    <label for="floating_outlined_password"
-        class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-        Mot de passe
-    </label>
-</div>
+                                        <!-- Icône pour afficher/masquer le mot de passe -->
+                                        <i :class="['fas', iconClass, 'toggle-password']"
+                                            @click="togglePasswordVisibility"
+                                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"></i>
+
+                                        <label for="floating_outlined_password"
+                                            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
+                                            Mot de passe
+                                        </label>
+                                    </div>
 
 
 
@@ -510,195 +549,16 @@ watch(searchTerm, fetchUsers);
 body {
     color: #566787;
     background-color: $text;
-    font-family: "Times New Roman", Times, serif;
-    font-size: 15px;
 }
 
-.d-flex {
-    display: flex;
-}
-
-.navbar {
-    height: 100vh;
-    position: fixed;
-    left: 0;
-}
-
-.container-lg {
-    margin-left: 17%;
+select {
+    display: block;
     width: 100%;
-    padding: 1px;
-    position: fixed;
-    margin-top: 7%;
-    margin-left: 15.5%;
-    box-shadow: 10px 10px 10px 10px#F0F0F0;
-    flex-direction: column;
+    height: auto;
 }
 
-/*<nav aria-label="Page navigation example" style="position: absolute; bottom: 20px; right: 0; left: 0;">*/
-
-.table-responsive {
-    overflow-x: hidden;
-    width: 100%;
-    margin: 0 auto;
-    margin-top: -0.6%;
-}
-
-.table-header {
-    position: -webkit-sticky;
-    /* Pour les navigateurs WebKit (Safari, Chrome) */
-    position: sticky;
-    top: 0;
-    background-color: #f8f9fa;
-    /* Couleur de fond pour le contraste avec le contenu défilant */
-    z-index: 10;
-    /* Assurez-vous que l'en-tête reste au-dessus du corps de la table */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    /* Optionnel : ajout d'une ombre pour améliorer la visibilité */
-}
-
-.table-wrapper {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    border: none;
-    overflow-x: hidden;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-}
-
-.table-title {
-    padding-bottom: 15px;
-    background-color: $text;
-    color: $primary;
-    padding: 16px 30px;
-    min-width: 100%;
-    margin: -20px -25px 10px;
-    border-radius: 3px 3px 0 0;
-    font-weight: bold;
-}
-
-.table-title h2 {
-    margin: 5px 0 0;
-    font-size: 20px;
-    margin-top: 3%;
-}
-
-.table-title .btn-group {
-    float: right;
-}
-
-.table-title .btn {
-    float: right;
-    font-size: 13px;
-    border: none;
-    min-width: 50px;
-    border-radius: 5px;
-    border: none;
-    outline: none !important;
-    margin-left: 10px;
-    margin-top: 3%;
-}
-
-.table-title .btn i {
-    float: left;
-    font-size: 21px;
-    margin-right: 5px;
-}
-
-.table-title .btn span {
-    float: left;
-    margin-top: 2px;
-}
-
-table.table tr th:first-child {
-    width: 150px;
-}
-
-table.table tr th:last-child {
-    width: 100px;
-    text-align: center;
-}
-
-table.table th i {
-    margin: 0 5px;
-    cursor: pointer;
-}
-
-table.table td:last-child i {
-    opacity: 0.9;
-    font-size: 15px;
-    margin: 0 1px;
-}
-
-.table-scroll-container {
-    height: 55vh;
-    overflow: auto;
-}
-
-.button {
-    align-items: center;
-    display: flex;
-    padding-bottom: 13%;
-}
-
-.navigation {
-    position: absolute;
-    bottom: 10px;
-    width: 100%;
-    left: 15.5%;
-    position: fixed;
-}
-
-.export-label {
-    font-weight: bold;
-    margin-top: 5px;
-    /* Aligne le texte légèrement au-dessus des boutons */
-    white-space: nowrap;
-    /* Empêche le texte de se casser */
-}
-
-.export-button {
-    flex: 1;
-    min-width: 100px;
-    height: 32px;
-    font-size: 0.75rem;
-    border-radius: 0.375rem;
-    background-color: $secondary;
-    /* Couleur du fond bleu */
-    color: white;
-    /* Couleur du texte blanc */
-    border: 1px solid #007bff;
-    /* Bordure bleu */
-    margin-top: -3px;
-    /* Légèrement plus haut */
-    padding: 0 10px;
-    /* Ajoute un peu d'espace intérieur horizontal */
-}
-
-.export-button:hover {
-    background-color: $primary;
-    /* Couleur de fond bleu foncé lors du survol */
-    transform: scale(1.05);
-    /* Légère augmentation de la taille lors du survol */
-}
-
-.btn-xs {
-    font-size: 0.6rem;
-    padding: 0.1rem 0.2rem;
-    /* Réduit le padding */
-}
-
-/* Boutons d'action */
-.action-buttons {
-    display: flex;
-    justify-content: space-around;
-}
-
-.action-buttons button {
-    justify-content: space-between;
-    margin-bottom: 23%;
-    border: 0;
-
+.container-fluid {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* Bouton d'édition */
@@ -739,24 +599,20 @@ table.table td:last-child i {
         /* Couleur de fond au survol */
         color: black;
         /* Couleur du texte */
-
     }
 }
 
-td,
-th {
-    text-align: center;
-    /* Centre le texte dans chaque cellule horizontalement */
-    vertical-align: middle;
-    /* Centre verticalement (si nécessaire) */
-    padding: 10px;
-    /* Ajoute de l'espace autour du texte pour plus de lisibilité */
-}
+/* Si vous souhaitez appliquer une hauteur globale à toutes les cellules de la table */
 
-#floating_outlined_motif i {
-    margin-left: -35px;
-    cursor: pointer;
-    line-height: 50px;
-    padding: 0;
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    /* Couleur noire avec opacité 50% */
+    z-index: 1040;
+    /* Assurez-vous que ce z-index est supérieur à celui de votre modal */
 }
 </style>

@@ -36,16 +36,20 @@ const router = createRouter({
       name:"code",
       component: Code,
 
+
     },
     {
       path:"/profil",
       name:"profile",
       component:Profil,
+      meta: { requiresAuth: true }, 
+
     },
     {
       path:"/reinitialisation",
       name:"reinitialisation",
       component:Réinitialisation,
+
 
     },
     {
@@ -58,7 +62,6 @@ const router = createRouter({
       path: "/",
       name: "home",
       component: Home,
-
     },
     {
       path: "/utilisateur",
@@ -87,7 +90,7 @@ const router = createRouter({
       path: "/dashboard",
       name: "dashboard",
       component: Dashboard,
-      meta: { requiresAuth: true }, // On protège cette page
+      meta: { requiresAuth: true ,role: ["ADMINISTRATEUR"] }, // On protège cette page
     },
     {
       path: "/user",
@@ -99,16 +102,22 @@ const router = createRouter({
       path: "/type",
       name: "type",
       component: Absence,
+      meta: { requiresAuth: true }, // On protège cette page
+
     },
     {
       path: "/departement",
       name: "departement",
       component: Departement,
+      meta: { requiresAuth: true }, // On protège cette page
+
     },
     {
       path: "/poste",
       name: "/poste",
       component: Poste,
+      meta: { requiresAuth: true }, // On protège cette page
+
     },
     /* {
       path: '/about',

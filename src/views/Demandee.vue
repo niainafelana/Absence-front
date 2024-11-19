@@ -7,6 +7,29 @@ import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
 import api from "../api"; // Import de votre instance API
 
+const getRoleFromToken = (token) => {
+  if (!token) return null;
+  const payload = token.split(".")[1];
+  const base64Url = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    atob(base64Url)
+      .split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
+  const parsedPayload = JSON.parse(jsonPayload);
+  return parsedPayload.role;
+};
+
+// Récupère le rôle de l'utilisateur à partir du token
+const userRole = computed(() => {
+  const token = localStorage.getItem("access_token");
+  if (token) {
+    return getRoleFromToken(token);
+  }
+  return null;
+});
+
 //conversion date
 const formatDate = (date) => {
   // S'assurer que la date est un objet Date
@@ -262,11 +285,10 @@ const filtrerDemandes = async () => {
       },
     });
     demandees.value = response.data; // Met à jour la liste des demandes filtrées
-    if (Object.keys(response.data).length == 0){
+    if (Object.keys(response.data).length == 0) {
       document.getElementById("button-addon-excel").disabled = true;
-      console.log('zero')
     }
-    else{
+    else {
       document.getElementById("button-addon-excel").disabled = false;
     }
   } catch (error) {
@@ -323,29 +345,32 @@ const exportToExcel = () => {
   }
 
   const ws_data = demandees.value.map((item) => [
-    `${item.personnel.nom_employe} ${item.personnel.pre_employe}`, // Nom et Prénom
     item.personnel.matricule, // Matricule
+    `${item.personnel.nom_employe} ${item.personnel.pre_employe}`, // Nom et Prénom
     item.personnel.poste, // Poste
-    item.jours_absence, // Jours d'absence
-    item.employe ? item.employe.solde_employe : 'N/A', // Solde Employé, avec une valeur par défaut
+    item.jours_absence, 
+    item.solde_employe ,
+    item.absence.nom_absence,
+    item.motif, 
+    formatDate(item.date_demande),
     formatDate(item.date_debut), // Date de départ
     formatDate(item.date_retour), // Date de retour
-    item.motif, // Motif
-    formatDate(item.date_fin), // Date Fin
   ]);
 
 
   // Ajouter les en-têtes de colonne
   ws_data.unshift([
-    "Nom et Prénom",
     "Matricule",
-    "Motif Employé",
-    "Jours d'absence",
-    "Solde Employé",
+    "Nom et Prénoms",
+    "Poste",
+    "Durée d'absence",
+    "Solde restant",
+    "Type d'Absence",
+    "Motif",
+    "Date de demande",
     "Date de départ",
     "Date de retour",
-    "Motif",
-    "Date Fin",
+   
   ]);
 
   // Créer une feuille avec les données
@@ -358,8 +383,8 @@ const exportToExcel = () => {
   // Exporter le fichier Excel
   XLSX.writeFile(wb, "Liste demande absence.xlsx");
 };
-function formatNumber(num){
-  return parseFloat(num).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function formatNumber(num) {
+  return parseFloat(num).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function imprimerDemande(demande) {
   const css = `
@@ -646,10 +671,6 @@ function imprimerDemande(demande) {
   fenetreImpression.focus();
   fenetreImpression.print();
 }
-setTimeout(() => {
-  fenetreImpression.focus();
-  fenetreImpression.print();
-}, 1000);
 
 function getAbsoluteImagePath() {
   return `${window.location.origin}/assets/sary/1721891607125.jpg`; // URL publique
@@ -658,87 +679,101 @@ function getAbsoluteImagePath() {
 // Fonction pour télécharger un fichier associé à une demande d'absence
 const downloadFile = async (demandeId) => {
   try {
-    // Envoyer une requête pour obtenir le fichier en Base64
     const response = await api.get(`/demandes/download/${demandeId}`);
     const { base64File, fileExtension, filename } = response.data;
 
-    // Créer un élément <a> pour déclencher le téléchargement
     const link = document.createElement("a");
     link.href = `data:application/${fileExtension};base64,${base64File}`;
     link.download = filename;
 
-    // Ajouter l'élément au DOM, cliquer sur le lien et le retirer après
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   } catch (error) {
-    console.error("Erreur lors du téléchargement du fichier:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Erreur",
+      text: "Aucun fichier à télécharger",
+      confirmButtonText: "Réessayer",
+      confirmButtonColor: "#d33",
+    });
   }
 };
 </script>
 <template>
 
   <body>
-    <div class="d-flex">
-      <Navbar />
-      <Utilisateur class="utilisateur" />
-      <div class="container-lg">
-        <div class="table-responsive">
-          <div class="table-wrapper">
-            <div class="table-title">
-              <div class="row">
-                <div class="col-sm-6">
-                  <h2>Listes Demandes Absences</h2>
-                </div>
-                <div class="col-sm-6">
-                  <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal"
-                    data-bs-target="#exampleModal">
-                    <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Demande</span>
-                  </button>
-                </div>
-                <div class="d-flex gap-2">
-                  <div class="flex items-center gap-2">
-                    <label for="input2" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Recherche</label>
-                    <input type="text" id="input2" v-model="recherche" @input="filtrerDemandes"
-                      class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                  </div>
+    <div class="d-flex flex-column flex-md-row" style="height: 100vh; overflow: hidden">
+      <!-- Navbar à gauche, largeur fixe -->
+      <div class="navbar-left" style="width: 200px">
+        <Navbar />
+      </div>
 
-                  <div class="flex items-center gap-2">
-                    <label for="dateDebut" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Mois</label>
-                    <input type="month" id="dateDebut" v-model="mois" @input="filtrerDemandes"
-                      class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                  </div>
+      <!-- Section principale sans scroll -->
+      <div class="d-flex flex-column flex-grow-1 p-0">
+        <!-- Utilisateur en haut avec hauteur automatique -->
+        <div class="utilisateur-top m-0" style="flex-shrink: 0">
+          <Utilisateur class="utilisateur" />
+        </div>
 
-                  <div class="flex items-center gap-2">
-                    <label for="dateDebut" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Date de début</label>
-                    <input type="date" id="dateDebut" v-model="dateDebut" @input="filtrerDemandes"
-                      class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                  </div>
 
-                  <div class="flex items-center gap-2">
-                    <label for="dateFin" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Date de fin</label>
-                    <input type="date" id="dateFin" v-model="dateFin" @input="filtrerDemandes"
-                      class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                  </div>
-                  <div class="flex items-center gap-3" style="max-width: 300px">
-                    <button class="export-button" type="button" id="button-addon-excel" @click="exportToExcel">
-                      Excel
-                    </button>
-                  </div>
-                </div>
-              </div>
+        <!-- Conteneur principal sans overflow -->
+        <div class="container-fluid flex-grow-1 d-flex flex-column"
+          style="width: calc(100% - 40px);margin: 20px 20px 0 20px;height: 100vh;overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);         position: relative;  /* Permet à l'ombre de bien se propager */ ">
+          <!-- En-tête avec liste des employés et bouton d'ajout -->
+          <div class="row p-3" style="flex-shrink: 0">
+            <div class="col">
+              <h4>Liste des demandes</h4>
+            </div>
+            <div class="col-auto">
+              <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <i class="fa-solid fa-plus-minus"></i><span> Nouvelle Demande</span>
+              </button>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mb-6 ml-4">
+            <div class="flex items-center gap-2">
+              <label for="input2" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Recherche</label>
+              <input type="text" id="input2" v-model="recherche" @input="filtrerDemandes"
+                class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
             </div>
 
-            <!--Liste des employes-->
-            <div class="table-scroll-container">
-              <table class="table table-striped table-hover" ref="dataTable">
-                <thead class="table-header">
+            <div class="flex items-center gap-2">
+              <label for="dateDebut" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Mois</label>
+              <input type="month" id="dateDebut" v-model="mois" @input="filtrerDemandes"
+                class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="dateDebut" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Date de début</label>
+              <input type="date" id="dateDebut" v-model="dateDebut" @input="filtrerDemandes"
+                class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label for="dateFin" class="text-xs text-gray-700 dark:text-gray-300 w-1/2">Date de fin</label>
+              <input type="date" id="dateFin" v-model="dateFin" @input="filtrerDemandes"
+                class="block w-3/4 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+            </div>
+            <div class="flex items-center gap-3" style="max-width: 300px">
+              <button class="export-button" type="button" id="button-addon-excel" @click="exportToExcel">
+                Excel
+              </button>
+            </div>
+          </div>
+          <!-- Table des employés qui prend toute la hauteur restante -->
+          <div class="table-wrapper flex-grow-1" style="overflow-y: auto; height: 100%; position: relative;">
+            <div class="table-responsive" style="height: 100%; overflow-y: auto;">
+              <table class="table table-striped table-hover w-100">
+                <!-- En-tête du tableau (fixe en haut) -->
+                <thead style="position: sticky; top: 0; background-color: white; z-index: 2;">
                   <tr>
-                    <th>N°Matricule</th>
-                    <th>Nom et Prénom</th>
+                    <th scope="col">Matricule</th>
+                    <th>Nom et Prénoms</th>
                     <th>Fonction</th>
                     <th>Nombre de jours</th>
                     <th>Solde restant</th>
+                    <th>Date demande</th>
                     <th>Date de départ</th>
                     <th>Date retour</th>
                     <th>Motif</th>
@@ -760,8 +795,9 @@ const downloadFile = async (demandeId) => {
                       {{ demandee.solde_employe === 0 ? "Epuisé" : demandee.solde_employe === 1 ? "1 jour" :
                         demandee.solde_employe + " jours" }}
                     </td>
+                    <td>{{ formatDate(demandee.date_demande) }}</td>
                     <td>{{ formatDate(demandee.date_debut) }}</td>
-                    <td>{{ formatDate(demandee.date_fin) }}</td>
+                    <td>{{ formatDate(demandee.date_retour) }}</td>
                     <td>{{ demandee.motif }}</td>
 
                     <td class="action-buttons ps-4">
@@ -777,11 +813,12 @@ const downloadFile = async (demandeId) => {
                       </div>
                       <div class="my-1"></div>
                       <div class="d-flex gap-1">
-                        <button type="button" class="btn btn-danger btn-sm btn-xs"
+                        <button type="button" class="btn btn-danger btn-sm btn-xs" v-if="userRole === 'ADMINISTRATEUR'"
                           @click="deleteDemande(demandee.id_demande)">
                           <i class="fa-solid fa-trash-can"></i>
                         </button>
-                        <button class="btn btn-secondary btn-sm btn-xs" @click="downloadFile(demandee.id_demande)">
+
+                        <span v-else style="display: flex; width: 38px;"></span>                                           <button class="btn btn-secondary btn-sm btn-xs" @click="downloadFile(demandee.id_demande)">
                           <i class="fs-6 fa-solid fa-circle-down"></i>
                         </button>
                       </div>
@@ -793,45 +830,47 @@ const downloadFile = async (demandeId) => {
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Navigation à insérer ici -->
-      <nav aria-label="Page navigation example" class="navigation">
-        <ul class="flex items-center -space-x-px h-100 text-sm">
-          <li>
-            <a href="#" @click.prevent="prevPage"
-              class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-              <span class="sr-only">Previous</span>
-              <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 6 10">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M5 1 1 5l4 4" />
-              </svg>
-            </a>
-          </li>
-          <li v-for="page in totalPages" :key="page">
-            <a href="#" @click.prevent="goToPage(page)" :class="[
-              'flex items-center justify-center px-3 h-8 leading-tight',
-              page === currentPage
-                ? 'z-10 text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
-                : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
-            ]">
-              {{ page }}
-            </a>
-          </li>
-          <li>
-            <a href="#" @click.prevent="nextPage"
-              class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-              <span class="sr-only">Next</span>
-              <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 6 10">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="m1 9 4-4-4-4" />
-              </svg>
-            </a>
-          </li>
-        </ul>
-      </nav>
+
+        <!-- Navigation à insérer ici -->
+        <div v-if="showModal" class="modal-backdrop fade show"></div>
+        <nav aria-label="Page navigation example" class="navigation">
+          <ul class="flex items-center -space-x-px h-20 text-sm">
+            <li>
+              <a href="#" @click.prevent="prevPage"
+                class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                <span class="sr-only">Previous</span>
+                <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                  fill="none" viewBox="0 0 6 10">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M5 1 1 5l4 4" />
+                </svg>
+              </a>
+            </li>
+            <li v-for="page in totalPages" :key="page">
+              <a href="#" @click.prevent="goToPage(page)" :class="[
+                'flex items-center justify-center px-3 h-8 leading-tight',
+                page === currentPage
+                  ? 'z-10 text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
+                  : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white',
+              ]">
+                {{ page }}
+              </a>
+            </li>
+            <li>
+              <a href="#" @click.prevent="nextPage"
+                class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                <span class="sr-only">Next</span>
+                <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                  fill="none" viewBox="0 0 6 10">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="m1 9 4-4-4-4" />
+                </svg>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
 
       <!--Modal creation employe-->
       <div class="modal fade" id="exampleModal" tabindex="-2" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -947,77 +986,77 @@ const downloadFile = async (demandeId) => {
           </div>
         </div>
       </div>
-    </div>
 
-    <!--Modal modification employe-->
-    <div class="modal fade" id="modalupdate" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-s">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel" style="
+      <!--Modal modification employe-->
+      <div class="modal fade" id="modalupdate" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-s">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel" style="
                 color: #212e53;
                 font-size: 1.25rem;
                 font-weight: bold;
                 text-align: center;
               ">
-              Modification du demande
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div v-if="edit" class="modal-body">
-            <form @submit.prevent="updateDemande" enctype="multipart/form-data">
-              <div class="flex flex-col sm:flex-row gap-4">
-                <!-- champ nom employe -->
-                <div class="relative w-full">
-                  <input type="date" v-model="date_debut" id="floating_outlined" readonly
-                    class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                    placeholder=" " />
-                  <label for="floating_outlined"
-                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                    Date début</label>
+                Modification du demande
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div v-if="edit" class="modal-body">
+              <form @submit.prevent="updateDemande" enctype="multipart/form-data">
+                <div class="flex flex-col sm:flex-row gap-4">
+                  <!-- champ nom employe -->
+                  <div class="relative w-full">
+                    <input type="date" v-model="date_debut" id="floating_outlined" readonly
+                      class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                      placeholder=" " />
+                    <label for="floating_outlined"
+                      class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
+                      Date début</label>
+                  </div>
+
+                  <!-- Champ "Prénom" -->
+                  <div class="relative w-full">
+                    <input type="date" v-model="date_fin" id="floating_outlined_prenom" readonly
+                      class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                      placeholder=" " />
+                    <label for="floating_outlined_prenom"
+                      class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
+                      Date fin
+                    </label>
+                  </div>
+                </div>
+                <br />
+                <div class="flex flex-col sm:flex-row gap-4">
+                  <!-- champ motif employe-->
+                  <div class="relative w-full">
+                    <input type="text" v-model="motif" id="floating_outlined_departement" readonly
+                      class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                      placeholder=" " />
+                    <label for="floating_outlined_deprtement"
+                      class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Motif</label>
+                  </div>
+                  <!-- champ sexe employe-->
+                  <div class="relative w-full">
+                    <input type="file" @change="handleFileUpload" id="floating_outlined_motif"
+                      class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                      placeholder=" " />
+                    <label for="floating_outlined_motif"
+                      class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Fichier</label>
+                  </div>
                 </div>
 
-                <!-- Champ "Prénom" -->
-                <div class="relative w-full">
-                  <input type="date" v-model="date_fin" id="floating_outlined_prenom" readonly
-                    class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                    placeholder=" " />
-                  <label for="floating_outlined_prenom"
-                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">
-                    Date fin
-                  </label>
-                </div>
-              </div>
-              <br />
-              <div class="flex flex-col sm:flex-row gap-4">
-                <!-- champ motif employe-->
-                <div class="relative w-full">
-                  <input type="text" v-model="motif" id="floating_outlined_departement" readonly
-                    class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                    placeholder=" " />
-                  <label for="floating_outlined_deprtement"
-                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Motif</label>
-                </div>
-                <!-- champ sexe employe-->
-                <div class="relative w-full">
-                  <input type="file" @change="handleFileUpload" id="floating_outlined_motif"
-                    class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                    placeholder=" " />
-                  <label for="floating_outlined_motif"
-                    class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Fichier</label>
-                </div>
-              </div>
+                <br />
 
-              <br />
-
-              <!-- bouton ajouter employer-->
-              <div class="modal-footer">
-                <button type="submit" style="color: #212e53"
-                  class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                  Mettre à jour
-                </button>
-              </div>
-            </form>
+                <!-- bouton ajouter employer-->
+                <div class="modal-footer">
+                  <button type="submit" style="color: #212e53"
+                    class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                    Mettre à jour
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -1031,131 +1070,16 @@ const downloadFile = async (demandeId) => {
 body {
   color: #566787;
   background-color: $text;
-  font-family: "Times New Roman", Times, serif;
-  font-size: 15px;
 }
 
-.d-flex {
-  display: flex;
-}
-
-.navbar {
-  height: 100vh;
-  position: fixed;
-  left: 0;
-}
-
-.container-lg {
+select {
+  display: block;
   width: 100%;
-  padding: 1px;
-  position: fixed;
-  margin-top: 7%;
-  margin-left: 15.5%;
-  box-shadow: 10px 10px 10px 10px#F0F0F0;
-  flex-direction: column;
+  height: auto;
 }
 
-.table-responsive {
-  overflow-x: hidden;
-  width: 100%;
-  margin: 0 auto;
-  margin-top: -0.6%;
-}
-
-.table-header {
-  position: -webkit-sticky;
-  position: sticky;
-  top: 0;
-  background-color: #f8f9fa;
-  z-index: 10;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.table-wrapper {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border: none;
-  overflow-x: hidden;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-}
-
-.table-title {
-  padding-bottom: 15px;
-  background-color: $text;
-  color: $primary;
-  padding: 16px 30px;
-  min-width: 100%;
-  margin: -20px -25px 10px;
-  border-radius: 3px 3px 0 0;
-  font-weight: bold;
-}
-
-.table-title h2 {
-  margin: 5px 0 0;
-  font-size: 20px;
-  margin-top: 3%;
-}
-
-.table-title .btn-group {
-  float: right;
-}
-
-.table-title .btn {
-  float: right;
-  font-size: 13px;
-  border: none;
-  min-width: 50px;
-  border-radius: 5px;
-  border: none;
-  outline: none !important;
-  margin-left: 10px;
-  margin-top: 3%;
-}
-
-.table-title .btn i {
-  float: left;
-  font-size: 21px;
-  margin-right: 5px;
-}
-
-.table-title .btn span {
-  float: left;
-  margin-top: 2px;
-}
-
-table.table tr th:first-child {
-  width: 150px;
-}
-
-table.table tr th:last-child {
-  width: 120px;
-  text-align: center;
-}
-
-table.table th i {
-  margin: 0 5px;
-  cursor: pointer;
-}
-
-/* Ajustez la hauteur des cellules spécifiques */
-
-
-/* Si vous souhaitez appliquer une hauteur globale à toutes les cellules de la table */
-td {
-  height: 40px;
-  /* Ajustez cette valeur pour toutes les cellules */
-}
-
-
-table.table td:last-child i {
-  opacity: 0.9;
-  font-size: 15px;
-}
-
-.table-scroll-container {
-  height: 55vh;
-  overflow: auto;
+.container-fluid {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .button {
@@ -1164,21 +1088,9 @@ table.table td:last-child i {
   padding-bottom: 13%;
 }
 
-.navigation {
-  position: absolute;
-  bottom: 10px;
-  width: 100%;
-  left: 15.5%;
-  position: fixed;
-}
 
-.export-label {
-  font-weight: bold;
-  margin-top: 5px;
-  /* Aligne le texte légèrement au-dessus des boutons */
-  white-space: nowrap;
-  /* Empêche le texte de se casser */
-}
+
+
 
 .export-button {
   flex: 1;
@@ -1205,24 +1117,6 @@ table.table td:last-child i {
   /* Légère augmentation de la taille lors du survol */
 }
 
-.btn-xs {
-  font-size: 0.6rem;
-  padding: 0.1rem 0.2rem;
-  /* Réduit le padding */
-}
-
-/* Boutons d'action */
-.action-buttons {
-  justify-content: space-between;
-  position: relative;
-}
-
-.action-buttons button {
-  justify-content: space-between;
-  border: 0;
-  margin-right: 8px;
-  /* Ajustez cette valeur selon vos besoins */
-}
 
 /* Bouton d'édition */
 .btn-warning {
@@ -1265,13 +1159,15 @@ table.table td:last-child i {
   }
 }
 
-td,
-th {
-  text-align: center;
-  /* Centre le texte dans chaque cellule horizontalement */
-  vertical-align: middle;
-  /* Centre verticalement (si nécessaire) */
-  padding: 10px;
-  /* Ajoute de l'espace autour du texte pour plus de lisibilité */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  /* Couleur noire avec opacité 50% */
+  z-index: 1040;
+  /* Assurez-vous que ce z-index est supérieur à celui de votre modal */
 }
 </style>

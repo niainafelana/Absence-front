@@ -88,7 +88,6 @@ const creationEmploye = async () => {
             timer: 1500,
         });
 
-
         cancel();
         await listeEmploye();
     } catch (error) {
@@ -104,7 +103,7 @@ const creationEmploye = async () => {
 /*Affichage de la liste des employes dans un tableau*/
 const employees = ref([]);
 const currentPage = ref(1); // Page actuelle
-const itemsPerPage = ref(5); // Nombre d'éléments par page
+const itemsPerPage = ref(100); // Nombre d'éléments par page
 
 // Méthode pour charger les employés depuis le backend
 const listeEmploye = async () => {
@@ -126,7 +125,9 @@ const paginatedEmployes = computed(() => {
     const filteredUsers = employees.value.filter((employe) => {
         return (
             employe.matricule.toString().includes(searchTerm.value) || // Vérifie le matricule
-            employe.nom_employe.toLowerCase().includes(searchTerm.value.toLowerCase()) || // Vérifie le nom
+            employe.nom_employe
+                .toLowerCase()
+                .includes(searchTerm.value.toLowerCase()) || // Vérifie le nom
             employe.pre_employe.toLowerCase().includes(searchTerm.value.toLowerCase())
         ); // Vérifie le prénom
     });
@@ -329,7 +330,10 @@ const fetchAbsences = async (employee) => {
             absenceStats.value = response.data;
             renderCharts();
         } else {
-            console.error("Erreur : données non définies dans la réponse", response.data);
+            console.error(
+                "Erreur : données non définies dans la réponse",
+                response.data
+            );
             absenceStats.value = { totalAbsences: 0 };
         }
     } catch (error) {
@@ -355,7 +359,10 @@ const filterAbsences = async () => {
             absenceStats.value = response.data;
             renderCharts();
         } else {
-            console.error("Erreur : données non définies dans la réponse", response.data);
+            console.error(
+                "Erreur : données non définies dans la réponse",
+                response.data
+            );
             absenceStats.value = { totalAbsences: 0 };
         }
     } catch (error) {
@@ -412,7 +419,9 @@ const renderCharts = () => {
             labelsBar = absenceStats.value.absencesByFilter.map((item) =>
                 formatDate(item.date)
             );
-            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            dataBar = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_absences
+            );
             totalDureeData = absenceStats.value.absencesByFilter.map(
                 (item) => item.total_duree || 0
             );
@@ -421,7 +430,9 @@ const renderCharts = () => {
             labelsBar = absenceStats.value.absencesByFilter.map(
                 (item) => `Semaine ${item.week}`
             );
-            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            dataBar = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_absences
+            );
             totalDureeData = absenceStats.value.absencesByFilter.map(
                 (item) => item.total_duree || 0
             );
@@ -430,14 +441,18 @@ const renderCharts = () => {
             labelsBar = absenceStats.value.absencesByFilter.map((item) =>
                 getMonthName(item.month - 1)
             );
-            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            dataBar = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_absences
+            );
             totalDureeData = absenceStats.value.absencesByFilter.map(
                 (item) => item.total_duree || 0
             );
             break;
         case "annee":
             labelsBar = absenceStats.value.absencesByFilter.map((item) => item.year);
-            dataBar = absenceStats.value.absencesByFilter.map((item) => item.total_absences);
+            dataBar = absenceStats.value.absencesByFilter.map(
+                (item) => item.total_absences
+            );
             totalDureeData = absenceStats.value.absencesByFilter.map(
                 (item) => item.total_duree || 0
             );
@@ -459,7 +474,8 @@ const renderCharts = () => {
             case "jour":
                 // Utiliser le format DD/MM/YYYY pour la comparaison
                 index = labelsBar.findIndex(
-                    (label) => formatDateToDDMMYYYY(label) === formatDateToDDMMYYYY(item.date)
+                    (label) =>
+                        formatDateToDDMMYYYY(label) === formatDateToDDMMYYYY(item.date)
                 );
                 if (index === -1) {
                     console.warn(
@@ -470,13 +486,19 @@ const renderCharts = () => {
                 }
                 break;
             case "semaine":
-                index = labelsBar.findIndex((label) => label === `Semaine ${item.week}`);
+                index = labelsBar.findIndex(
+                    (label) => label === `Semaine ${item.week}`
+                );
                 break;
             case "mois":
-                index = labelsBar.findIndex((label) => label === getMonthName(item.month - 1));
+                index = labelsBar.findIndex(
+                    (label) => label === getMonthName(item.month - 1)
+                );
                 break;
             case "annee":
-                index = labelsBar.findIndex((label) => label.toString() === item.year.toString());
+                index = labelsBar.findIndex(
+                    (label) => label.toString() === item.year.toString()
+                );
                 break;
             default:
                 index = -1;
@@ -556,7 +578,9 @@ const renderCharts = () => {
                             label +=
                                 ": " +
                                 context.parsed.y +
-                                (context.dataset.label === "Durée Totale (jours)" ? " jours" : "");
+                                (context.dataset.label === "Durée Totale (jours)"
+                                    ? " jours"
+                                    : "");
                             return label;
                         },
                     },
@@ -626,116 +650,138 @@ const removeSpecialCharacters = (event) => {
 <template>
 
     <body>
-        <div class="d-flex">
-            <Navbar />
-            <Utilisateur class="utilisateur" />
-            <div class="container-lg">
-                <div class="row p-3">
-                    <div class="col">
-                        Liste des employes
-                    </div>
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                            data-bs-target="#exampleModal">
-                            <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Employe</span>
-                        </button>
-                    </div>
+        <div class="d-flex flex-column flex-md-row" style="height: 100vh; overflow: hidden">
+            <!-- Navbar à gauche, largeur fixe -->
+            <div class="navbar-left" style="width: 200px">
+                <Navbar />
+            </div>
+
+            <!-- Section principale sans scroll -->
+            <div class="d-flex flex-column flex-grow-1 p-0">
+                <!-- Utilisateur en haut avec hauteur automatique -->
+                <div class="utilisateur-top m-0" style="flex-shrink: 0">
+                    <Utilisateur class="utilisateur" />
                 </div>
-                <div>
-                    <div class="form-floating d-inline-block">
-                        <input type="text" id="input2" v-model="searchTerm" @input="fetchUsers" class="form-control"
-                            placeholder="Recherche" />
-                        <label for="input2">Recherche</label>
-                    </div>
-                </div>
-                <div class="table-wrapper">
 
-                    <!--Liste des employes-->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Matricule</th>
-                                    <th>Nom</th>
-                                    <th>Prenom</th>
-                                    <th>Sexe</th>
-                                    <th>Motif</th>
-                                    <th>Département</th>
-                                    <th>Solde d'absence</th>
-                                    <th>Plafonnement</th>
-                                    <th v-if="userRole === 'ADMINISTRATEUR'">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                <tr role="button" v-for="employee in paginatedEmployes" :key="employee.id"
-                                    @click="showDashboard(employee)">
-                                    <td>{{ employee.matricule }}</td>
-                                    <td>{{ employee.nom_employe }}</td>
-                                    <td>{{ employee.pre_employe }}</td>
-                                    <td>{{ employee.sexe === "F" ? "Femme" : "Homme" }}</td>
-                                    <td>{{ employee.poste }}</td>
-                                    <td>{{ employee.departement }}</td>
-                                    <td>
-                                        {{ employee.solde_employe === 0 ? "Epuisé" : employee.solde_employe === 1 ?
-                                            "1 jour" : employee.solde_employe + " jours" }}
-                                    </td>
-                                    <td>{{ employee.plafonnement + " jours" }}</td>
-                                    <td v-if="userRole === 'ADMINISTRATEUR'">
-                                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                                            data-bs-target="#modalupdate" @click="editEmploye(employee, $event)">
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-danger btn-sm ms-2"
-                                            @click="deleteEmploye(employee.id_employe, $event)">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <!-- Conteneur principal sans overflow -->
+                <div class="container-fluid flex-grow-1 d-flex flex-column"
+                    style="width: calc(100% - 40px);margin: 20px 20px 0 20px;height: 100vh;overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);        position: relative;  /* Permet à l'ombre de bien se propager */ ">
+                    <!-- En-tête avec liste des employés et bouton d'ajout -->
+                    <div class="row p-3" style="flex-shrink: 0">
+                        <div class="col">
+                            <h4>Liste des employés</h4>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-success" @click="cancel()" data-bs-toggle="modal"
+                                data-bs-target="#exampleModal">
+                                <i class="fa-solid fa-plus-minus"></i><span> Ajouter Employé</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div v-if="showModal" class="modal fade show" tabindex="-1" style="display: block">
-                        <div class="modal-dialog modal-xl modal-dialog-centered modal-custom">
-                            <!-- Utilisation de modal-xl pour un modal plus large -->
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">
-                                        Statistiques d'absence pour {{ selectedEmployee.nom_employe }}
-                                        {{ selectedEmployee.pre_employe }}
-                                    </h5>
-                                    <button type="button" class="btn-close" @click="onModalClose"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <p>
-                                            <strong>Total des absences :</strong>
-                                            <strong>{{ absenceStats.totalAbsences }}</strong>
-                                        </p>
-                                    </div>
-                                    <div class="d-flex mb-3">
-                                        <select v-model="filterType" class="form-select me-2" @change="filterAbsences">
-                                            <option value="jour">Jour</option>
-                                            <option value="semaine">Semaine</option>
-                                            <option value="mois">Mois</option>
-                                            <option value="annee">Année</option>
-                                        </select>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="text" id="input2" v-model="searchTerm" @input="fetchUsers"
+                            class="block w-4/3 p-2 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                    </div>
 
-                                        <input type="date" v-model="startDate" class="form-control me-2"
-                                            placeholder="Date de début" />
-                                        <input type="date" v-model="endDate" class="form-control me-2"
-                                            placeholder="Date de fin" />
-                                        <button class="btn btn-primary" @click="filterAbsences">
-                                            Rechercher
-                                        </button>
+
+
+
+
+
+                    <!-- Table des employés qui prend toute la hauteur restante -->
+                    <div class="table-wrapper flex-grow-1" style="overflow-y: auto; height: 100%; position: relative;">
+                        <div class="table-responsive" style="height: 100%; overflow-y: auto;">
+                            <table class="table table-striped table-hover w-100">
+                                <!-- En-tête du tableau (fixe en haut) -->
+                                <thead style="position: sticky; top: 0; background-color: white; z-index: 2;">
+
+                                    <tr>
+                                        <th scope="col">Matricule</th>
+                                        <th>Nom et Prénoms</th>
+                                        <th>Sexe</th>
+                                        <th>Poste</th>
+                                        <th>Solde Restant</th>
+                                        <th>Plafonnement</th>
+                                        <th v-if="userRole === 'ADMINISTRATEUR'">Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr role="button" v-for="employee in paginatedEmployes" :key="employee.id"
+                                        @click="userRole === 'ADMINISTRATEUR' && showDashboard(employee)">
+                                        <td>{{ employee.matricule }}</td>
+                                        <td>{{ employee.nom_employe }} {{ employee.pre_employe }}</td>
+                                        <td>{{ employee.sexe === "F" ? "Femme" : "Homme" }}</td>
+                                        <td>{{ employee.poste }} - {{ employee.departement }}</td>
+                                        <td>
+                                            {{
+                                                employee.solde_employe === 0
+                                                    ? "Epuisé"
+                                                    : employee.solde_employe === 1
+                                                        ? "1 jour"
+                                                        : employee.solde_employe + " jours"
+                                            }}
+                                        </td>
+                                        <td>{{ employee.plafonnement + " jours" }}</td>
+                                        <td v-if="userRole === 'ADMINISTRATEUR'">
+                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#modalupdate" @click="editEmploye(employee, $event)">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm ms-2"
+                                                @click="deleteEmploye(employee.id_employe, $event)">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div v-if="showModal" class="modal fade show" tabindex="-1" style="display: block">
+                            <div class="modal-dialog modal-xl modal-dialog-centered modal-custom">
+                                <!-- Utilisation de modal-xl pour un modal plus large -->
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            Statistiques d'absence pour
+                                            {{ selectedEmployee.nom_employe }}
+                                            {{ selectedEmployee.pre_employe }}
+                                        </h5>
+                                        <button type="button" class="btn-close" @click="onModalClose"></button>
                                     </div>
-                                    <div class="d-flex justify-content-between">
-                                        <div class="chart-container me-3" style="flex: 1">
-                                            <canvas id="barChart"></canvas>
+                                    <div class="modal-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <p>
+                                                <strong>Total des absences :</strong>
+                                                <strong>{{ absenceStats.totalAbsences }}</strong>
+                                            </p>
                                         </div>
-                                        <div class="chart-container ms-3" style="flex: 1">
-                                            <canvas id="lineChart"></canvas>
+                                        <div class="d-flex mb-3">
+                                            <select v-model="filterType" class="form-select me-2"
+                                                @change="filterAbsences">
+                                                <option value="jour">Jour</option>
+                                                <option value="semaine">Semaine</option>
+                                                <option value="mois">Mois</option>
+                                                <option value="annee">Année</option>
+                                            </select>
+
+                                            <input type="date" v-model="startDate" class="form-control me-2"
+                                                placeholder="Date de début" />
+                                            <input type="date" v-model="endDate" class="form-control me-2"
+                                                placeholder="Date de fin" />
+                                            <button class="btn btn-primary" @click="filterAbsences">
+                                                Rechercher
+                                            </button>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <div class="chart-container me-3" style="flex: 1">
+                                                <canvas id="barChart"></canvas>
+                                            </div>
+                                            <div class="chart-container ms-3" style="flex: 1">
+                                                <canvas id="lineChart"></canvas>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -743,6 +789,7 @@ const removeSpecialCharacters = (event) => {
                         </div>
                     </div>
                 </div>
+
                 <div v-if="showModal" class="modal-backdrop fade show"></div>
                 <nav aria-label="Page navigation example" class="navigation">
                     <ul class="flex items-center -space-x-px h-20 text-sm">
@@ -861,7 +908,9 @@ const removeSpecialCharacters = (event) => {
                                         </label>
                                         <select v-model="departement" id="departement" @change="fetchPostes"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer scrollable-select">
-                                            <option disabled value="">Sélectionnez un département</option>
+                                            <option disabled value="">
+                                                Sélectionnez un département
+                                            </option>
                                             <option v-for="departement in departements"
                                                 :key="departement.nom_departement" :value="departement.nom_departement">
                                                 {{ departement.nom_departement }}
@@ -875,7 +924,9 @@ const removeSpecialCharacters = (event) => {
                                         </label>
                                         <select v-model="motif" id="fonction"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer scrollable-select">
-                                            <option disabled value="">Sélectionnez une fonction</option>
+                                            <option disabled value="">
+                                                Sélectionnez une fonction
+                                            </option>
                                             <option v-for="poste in postes" :key="poste.id" :value="poste.fonction">
                                                 {{ poste.fonction }}
                                             </option>
@@ -1017,7 +1068,7 @@ const removeSpecialCharacters = (event) => {
                                         <input type="number" v-model="solde_employe"
                                             id="floating_outlined_solde_employe"
                                             class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                            placeholder=" " />
+                                            placeholder=" " step="0.1" />
                                         <label for="floating_outlined_solde_employe"
                                             class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4">Solde</label>
                                     </div>
@@ -1057,17 +1108,6 @@ const removeSpecialCharacters = (event) => {
 body {
     color: #566787;
     background-color: $text;
-    font-size: 15px;
-}
-
-.d-flex {
-    display: flex;
-}
-
-.select-container {
-    position: relative;
-    max-height: 50px;
-    overflow-y: auto;
 }
 
 select {
@@ -1076,77 +1116,8 @@ select {
     height: auto;
 }
 
-.container-lg {
-    margin-left: 17%;
-    width: 100%;
-    position: fixed;
-    margin-top: 7%;
-    margin-left: 15.5%;
-    box-shadow: 10px 10px 10px 10px#F0F0F0;
-    flex-direction: column;
-}
-
-.table-scroll-container {
-    height: 70vh;
-    overflow: auto;
-}
-
-.navigation {
-    position: absolute;
-    bottom: 10px;
-    width: 100%;
-    left: 15.5%;
-    position: fixed;
-}
-
-.export-label {
-    font-weight: bold;
-    margin-top: 5px;
-    /* Aligne le texte légèrement au-dessus des boutons */
-    white-space: nowrap;
-    /* Empêche le texte de se casser */
-}
-
-.export-button {
-    flex: 1;
-    min-width: 100px;
-    height: 32px;
-    font-size: 0.75rem;
-    border-radius: 0.375rem;
-    background-color: $secondary;
-    /* Couleur du fond bleu */
-    color: white;
-    /* Couleur du texte blanc */
-    border: 1px solid #007bff;
-    /* Bordure bleu */
-    margin-top: -3px;
-    /* Légèrement plus haut */
-    padding: 0 10px;
-    /* Ajoute un peu d'espace intérieur horizontal */
-}
-
-.export-button:hover {
-    background-color: $primary;
-    /* Couleur de fond bleu foncé lors du survol */
-    transform: scale(1.05);
-    /* Légère augmentation de la taille lors du survol */
-}
-
-.btn-xs {
-    font-size: 0.6rem;
-    padding: 0.1rem 0.2rem;
-    /* Réduit le padding */
-}
-
-/* Boutons d'action */
-.action-buttons {
-    display: flex;
-    justify-content: space-around;
-}
-
-.action-buttons button {
-    justify-content: space-between;
-    border: 0;
+.container-fluid {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* Bouton d'édition */
@@ -1191,10 +1162,6 @@ select {
 }
 
 /* Si vous souhaitez appliquer une hauteur globale à toutes les cellules de la table */
-td {
-    height: 40px;
-    /* Ajustez cette valeur pour toutes les cellules */
-}
 
 .modal-backdrop {
     position: fixed;

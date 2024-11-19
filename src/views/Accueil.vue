@@ -6,62 +6,64 @@ import { ref, onMounted, computed } from "vue";
 </script>
 
 <template>
-
-    <body>
-        <div class="d-flex">
+<body>
+    
+    <div class="d-flex flex-column flex-md-row" style="height: 100vh; overflow: hidden;background:white">
+        <!-- Navbar à gauche, largeur fixe -->
+        <div class="navbar-left" style="width: 200px">
             <Navbar />
-            <Utilisateur class="utilisateur" />
-            <div class="container-lg">
-                <!-- Contenu principal ici -->
-                <!-- Ajout du schéma et du texte en bas -->
+        </div>
+
+        <!-- Section principale sans scroll -->
+        <div class="d-flex flex-column flex-grow-1 p-0">
+            <!-- Utilisateur en haut avec hauteur automatique -->
+            <div class="utilisateur-top m-0" style="flex-shrink: 0">
+                <Utilisateur class="utilisateur" />
+            </div>
+
+            <!-- Conteneur principal sans overflow -->
+            <div class="container-fluid flex-grow-1 d-flex flex-column"
+                >
+                <!-- En-tête avec liste des employés et bouton d'ajout -->
                 <div class="absence-section">
-                    <div class="info">
-                        <span class="conges-label">"Suivi des absences"</span>
-                        <h1 class="title">"Gérez les absences de vos collaborateurs en toute simplicité."</h1>
-                        <div class="button-container">
-                            <router-link to="/demande" class="btn-discover">Gérer les absences</router-link>
-                        </div>
-                    </div>
-                    <div class="schema">
-                        <!-- Image du schéma sans card -->
-                        <img src="../assets/photos/prise-rendez-vous-calendrier_23-2148553115.avif" alt="Schéma"
-                            class="schema-image" />
+                <div class="info pb-10">
+                    <span class="conges-label">"Suivi des absences"</span>
+                    <h1 class="title">"Gérez les absences de vos collaborateurs en toute simplicité."</h1>
+                    <div class="button-container">
+                        <router-link to="/demande" class="btn-discover">Gérer les absences</router-link>
                     </div>
                 </div>
+                <div class="schema">
+                    <!-- Image du schéma sans card -->
+                    <img src="../assets/photos/prise-rendez-vous-calendrier_23-2148553115.avif" alt="Schéma"
+                        class="schema-image" />
+                </div>
             </div>
+            </div>
+
         </div>
+    </div>
+
+
     </body>
 </template>
 
 <style lang="scss" scoped>
 @import "../assets/style/globaly.scss";
-
 body {
     color: #566787;
     background-color: $text;
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 15px;
 }
 
-.d-flex {
-    display: flex;
-}
-
-.navbar {
-    height: 100vh;
-    position: fixed;
-    left: 0;
-}
-
-.container-lg {
-    margin-left: 17%;
+select {
+    display: block;
     width: 100%;
-    padding: 1px;
-    position: fixed;
-    margin-top: 5%;
-    margin-left: 15.5%;
-    flex-direction: column;
+    height: auto;
 }
+
+
+
+
 
 /* Ajustement pour la section absence */
 .absence-section {
@@ -74,8 +76,9 @@ body {
 }
 
 .info {
-    width: 48%;
+    width: 50%;
     text-align: center;
+
     /* Centrer le texte horizontalement */
 }
 
@@ -89,10 +92,14 @@ body {
     font-weight: bold;
     color: $primary;
 }
+
 .button-container {
-  width: 100%; /* S'assure que le conteneur du bouton prend toute la largeur disponible */
-  text-align: center; /* Centre le bouton horizontalement */
-  margin-top: 20px; /* Ajustez la marge pour le positionnement */
+    width: 100%;
+    /* S'assure que le conteneur du bouton prend toute la largeur disponible */
+    text-align: center;
+    /* Centre le bouton horizontalement */
+    margin-top: 20px;
+    /* Ajustez la marge pour le positionnement */
 }
 
 .btn-discover {
