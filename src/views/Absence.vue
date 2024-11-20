@@ -128,7 +128,7 @@ const editUser = (usere) => {
 const updateUser = async () => {
     try {
         await api.patch(`/absences/modifierabsence/${edition.value}`, {
-            nom_absence: name.value,
+            name: name.value,
             type: type.value,
             duree: duree.value,
 
@@ -241,7 +241,7 @@ watch(searchTerm, fetchUsers);
                         <div class="col-auto">
                             <button type="button" class="btn btn-success" data-bs-toggle="modal"
                                 data-bs-target="#exampleModal">
-                                <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Absence</span>
+                                <i class="fa-solid fa-plus-minus"></i><span> Nouvelle Absence</span>
                             </button>
                         </div>
                     </div>

@@ -6,50 +6,61 @@ import { ref, onMounted, computed } from "vue";
 </script>
 
 <template>
-<body>
-    
-    <div class="d-flex flex-column flex-md-row" style="height: 100vh; overflow: hidden;background:white">
-        <!-- Navbar à gauche, largeur fixe -->
-        <div class="navbar-left" style="width: 200px">
-            <Navbar />
-        </div>
 
-        <!-- Section principale sans scroll -->
-        <div class="d-flex flex-column flex-grow-1 p-0">
-            <!-- Utilisateur en haut avec hauteur automatique -->
-            <div class="utilisateur-top m-0" style="flex-shrink: 0">
-                <Utilisateur class="utilisateur" />
+    <body>
+        <div class="d-flex flex-column flex-md-row" style="height: 100vh; overflow: hidden">
+            <!-- Navbar à gauche, largeur fixe -->
+            <div class="navbar-left" style="width: 200px">
+                <Navbar />
             </div>
 
-            <!-- Conteneur principal sans overflow -->
-            <div class="container-fluid flex-grow-1 d-flex flex-column"
-                >
-                <!-- En-tête avec liste des employés et bouton d'ajout -->
-                <div class="absence-section">
-                <div class="info pb-10">
-                    <span class="conges-label">"Suivi des absences"</span>
-                    <h1 class="title">"Gérez les absences de vos collaborateurs en toute simplicité."</h1>
-                    <div class="button-container">
-                        <router-link to="/demande" class="btn-discover">Gérer les absences</router-link>
+            <!-- Section principale sans scroll -->
+            <div class="d-flex flex-column flex-grow-1 p-0">
+                <!-- Utilisateur en haut avec hauteur automatique -->
+                <div class="utilisateur-top m-0" style="flex-shrink: 0">
+                    <Utilisateur class="utilisateur" />
+                </div>
+
+                <!-- Conteneur principal sans overflow -->
+                <div class="container-fluid flex-grow-1 d-flex flex-column" style="
+            width: calc(100% - 40px);
+            margin: 20px 20px 20px 70px;
+            height: 100vh;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;   display: flex;
+    justify-content: space-between;
+    align-items: center; /* Permet à l'ombre de bien se propager */
+          ">
+                    <!-- En-tête avec liste des employés et bouton d'ajout -->
+                    <div class="absence-section d-flex pb-10">
+                        <div class="info pb-10">
+                            <span class="conges-label">"Suivi des absences"</span>
+                            <h1 class="title">
+                                "Gérez les absences de vos collaborateurs en toute simplicité."
+                            </h1>
+                            <div class="button-container">
+                                <router-link to="/demande" class="btn-discover">Gérer les absences</router-link>
+                            </div>
+                        </div>
+                        <div class="schema">
+                            <!-- Image du schéma sans card -->
+                            <img src="../assets/photos/prise-rendez-vous-calendrier_23-2148553115.avif" alt="Schéma"
+                                class="schema-image" />
+                        </div>
                     </div>
                 </div>
-                <div class="schema">
-                    <!-- Image du schéma sans card -->
-                    <img src="../assets/photos/prise-rendez-vous-calendrier_23-2148553115.avif" alt="Schéma"
-                        class="schema-image" />
-                </div>
             </div>
-            </div>
-
         </div>
-    </div>
-
-
     </body>
 </template>
 
 <style lang="scss" scoped>
 @import "../assets/style/globaly.scss";
+
+
+
+
 body {
     color: #566787;
     background-color: $text;
@@ -61,18 +72,23 @@ select {
     height: auto;
 }
 
-
-
-
+.container-fluid {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    width: calc(100% - 40px);
+            margin: 20px 20px 20px 20px;
+            height: 100vh;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;   display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
 /* Ajustement pour la section absence */
 .absence-section {
-    display: flex;
-    margin-top: 50px;
+    justify-content: space-between; /* Sépare les deux sections */
+    align-items: center; /* Centre verticalement les éléments */
     width: 100%;
-    justify-content: space-between;
-    align-items: center;
-    /* Centre verticalement les deux éléments */
 }
 
 .info {
@@ -112,18 +128,15 @@ select {
     font-size: 18px;
     font-weight: bold;
     margin-top: 10000px;
-    /* Augmenter la marge pour déplacer le bouton plus bas */
 }
 
-/* Suppression de la card pour le schéma */
 .schema {
-    width: 48%;
+    width: 50%;
 }
 
 .schema-image {
-    width: 100%;
-    /* L'image remplit l'espace sans cadre */
     height: auto;
-    /* Garder les proportions de l'image */
+    width: 100%;
+    flex: auto;
 }
 </style>

@@ -227,7 +227,7 @@ const renderCharts = () => {
           borderWidth: 1,
           yAxisID: "absences", // Axe pour le total des absences
         },
-       
+
       ],
     },
     options: {
@@ -242,9 +242,9 @@ const renderCharts = () => {
             text: "Total des absences",
           },
         },
-       
+
       },
-  
+
     },
   });
 };
@@ -302,7 +302,7 @@ const createLineChart = () => {
       plugins: {
         tooltip: {
           callbacks: {
-            label: function(tooltipItem) {
+            label: function (tooltipItem) {
               return `Absences: ${tooltipItem.raw}`;  // Affiche le nombre d'absences lors du survol
             }
           }
@@ -321,29 +321,29 @@ onMounted(fetchAbsences);
 
 <template>
 
-
-
-
-
-
-
-
-
-
-
-
-
   <body>
-    <div class="d-flex">
-      <Navbar />
-      <Utilisateur class="utilisateur" />
-      <div class="container-lg">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-custom">
-          <div class="modal-content">
-            <div class="modal-body">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>Tableau de board :</h3>
-              </div>
+    <div class="d-flex flex-column flex-md-row" style="height: 100vh; overflow: hidden">
+      <!-- Navbar à gauche, largeur fixe -->
+      <div class="navbar-left" style="width: 200px">
+        <Navbar />
+      </div>
+
+      <!-- Section principale sans scroll -->
+      <div class="d-flex flex-column flex-grow-1 p-0">
+        <!-- Utilisateur en haut avec hauteur automatique -->
+        <div class="utilisateur-top m-0" style="flex-shrink: 0">
+          <Utilisateur class="utilisateur" />
+        </div>
+
+        <!-- Conteneur principal sans overflow -->
+        <div class="container-fluid flex-grow-1 d-flex flex-column"
+          style="width: calc(100% - 40px);margin: 20px 20px 20px 20px;height: 100vh;overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);        position: relative;  /* Permet à l'ombre de bien se propager */ ">
+          <!-- En-tête avec liste des employés et bouton d'ajout -->
+          <div class="" style="flex-shrink: 0">
+            <div class="col">
+              <h4>Tableau de board :</h4>
+            </div>
+            <div class="col-auto">
               <div class="d-flex mb-3">
                 <select v-model="filterType" class="form-select me-2" @change="filterAbsences">
                   <option value="jour">Jour</option>
@@ -358,8 +358,6 @@ onMounted(fetchAbsences);
                   Rechercher
                 </button>
               </div>
-           
-
               <div class="d-flex justify-content-between">
                 <div class="chart-container me-3" style="flex: 1">
                   <canvas id="barChart"></canvas>
@@ -373,8 +371,8 @@ onMounted(fetchAbsences);
         </div>
       </div>
     </div>
-    <div v-if="showModal" class="modal-backdrop fade show"></div>
-    <!-- Pagination controls -->
+
+      <!-- Pagination controls -->
   </body>
 </template>
 
@@ -384,81 +382,49 @@ onMounted(fetchAbsences);
 body {
   color: #566787;
   background-color: $text;
-  font-size: 20px;
 }
 
-.d-flex {
-  display: flex;
+select {
+  display: block;
+  width: 100%;
+  height: auto;
 }
+
+.container-fluid {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.button {
+  align-items: center;
+  display: flex;
+  padding-bottom: 13%;
+}
+
+
 .chart-container {
-  width: 700px; /* Appliquez la largeur souhaitée */
-  height: 400px; /* Ajustez la hauteur en conséquence */
+  width: 700px;
+  /* Appliquez la largeur souhaitée */
+  height: 400px;
+  /* Ajustez la hauteur en conséquence */
 }
 
 canvas {
-  width: 100% ; /* Force le canvas à prendre toute la largeur de son conteneur */
-  height: 90% !important; /* Force le canvas à prendre toute la hauteur de son conteneur */
-}
-
-
-.navbar {
-  height: 100vh;
-  position: fixed;
-  left: 0;
-}
-
-.container-lg {
   width: 100%;
-  position: fixed;
-  margin-top: 7%;
-  margin-left: 15.5%;
-  box-shadow: 10px 10px 10px 10px #f0f0f0;
-  flex-direction: column;
-  padding: 1%;
-  height: 80%;
+  /* Force le canvas à prendre toute la largeur de son conteneur */
+  height: 90% !important;
+  /* Force le canvas à prendre toute la hauteur de son conteneur */
 }
 
 
 
-.search-fields {
-  display: flex;
-  gap: 10px;
-  /* Espacement entre les champs */
-  flex-wrap: wrap;
-  /* Pour gérer le débordement si l'écran est trop petit */
+
+
+
+.chart-container {
+  width: 100%;
 }
 
-.search-fields div {
-  display: flex;
-  flex-direction: column;
-  /* Étiquette au-dessus de l'input */
+#lineChart {
+  height: 100%;
 }
-
-.absence-card {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f9f9f9;
-  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.error {
-  color: red;
-  margin-top: 10px;
-}
-  /* Étendre la largeur de la modale */
-  .modal-custom {
-    width: 100%;
-    max-width: 90vw; /* Prend jusqu'à 90% de la largeur de la fenêtre */
-  }
-
-  /* Étendre les conteneurs de graphiques */
-  .chart-container {
-    width: 100%;
-  }
-  
-  #lineChart{
-    height: 100%;
-  }
 </style>

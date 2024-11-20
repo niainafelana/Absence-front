@@ -262,7 +262,7 @@ watch(searchTerm, fetchUsers);
                         <div class="col-auto">
                             <button type="button" class="btn btn-success" data-bs-toggle="modal"
                                 data-bs-target="#exampleModal">
-                                <i class="fa-solid fa-plus-minus"></i><span>Nouvelle Utilisateur</span>
+                                <i class="fa-solid fa-plus-minus"></i><span> Ajouter Utilisateur</span>
                             </button>
                         </div>
                     </div>
